@@ -1,8 +1,28 @@
 #!/usr/bin/env node
+import { spawn } from 'node:child_process';
 import { resolve } from 'node:path';
 import { Command } from 'commander';
 import { daemonLogs, daemonStart, daemonStatus, daemonStop } from './daemon.js';
 import { ensurePreflight } from './preflight.js';
+
+/**
+ * Open a URL in the default browser. Works on Windows (start), macOS (open),
+ * and Linux (xdg-open). On Windows, Node's spawn cannot resolve .cmd files,
+ * so we route through cmd.exe.
+ */
+function spawnOpen(url: string): void {
+  try {
+    if (process.platform === 'win32') {
+      spawn('cmd', ['/c', 'start', url], { detached: true, stdio: 'ignore' }).unref();
+    } else if (process.platform === 'darwin') {
+      spawn('open', [url], { detached: true, stdio: 'ignore' }).unref();
+    } else {
+      spawn('xdg-open', [url], { detached: true, stdio: 'ignore' }).unref();
+    }
+  } catch {
+    /* best effort */
+  }
+}
 
 const program = new Command();
 
@@ -133,7 +153,17 @@ async function runWebMode(opts: {
   // signal -nextProc.pid and reach every worker Next.js forks (SWC, RSC
   // compiler, etc.). Without this, killing the parent leaves orphan
   // workers holding the dev port.
-  const nextProc = spawn(NEXT_BIN, ['dev', '--port', String(opts.nextPort)], {
+  //
+  // On Windows, spawn a .bin/next.cmd file by routing through cmd /c —
+  // Node's spawn cannot resolve .cmd files through PATH, so we explicitly
+  // invoke cmd.exe to handle it.
+  const nextBin = process.platform === 'win32'
+    ? ['cmd', '/c', NEXT_BIN]
+    : [NEXT_BIN];
+  const nextArgs = process.platform === 'win32'
+    ? ['dev', '--port', String(opts.nextPort)]
+    : ['dev', '--port', String(opts.nextPort)];
+  const nextProc = spawn(nextBin[0]!, [...nextBin.slice(1), ...nextArgs], {
     stdio: 'inherit',
     cwd: WEB_DIR,
     detached: true,
@@ -143,7 +173,7 @@ async function runWebMode(opts: {
   if (opts.openBrowser) {
     setTimeout(() => {
       try {
-        spawn('open', [browserUrl], { detached: true, stdio: 'ignore' }).unref();
+        spawnOpen(browserUrl);
       } catch {
         /* best effort */
       }

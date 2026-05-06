@@ -8,7 +8,8 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { setTimeout as wait } from 'node:timers/promises';
 
 /**
@@ -77,6 +78,28 @@ function killGroup(pid: number, signal: NodeJS.Signals): boolean {
   }
 }
 
+/**
+ * Open a URL in the default browser. Works on Windows (start), macOS (open),
+ * and Linux (xdg-open). On Windows, Node's spawn cannot resolve .cmd files,
+ * so we route through cmd.exe.
+ */
+function spawnOpen(url: string): void {
+  try {
+    if (process.platform === 'win32') {
+      spawn('cmd', ['/c', 'start', url], { detached: true, stdio: 'ignore' }).unref();
+    } else if (process.platform === 'darwin') {
+      spawn('open', [url], { detached: true, stdio: 'ignore' }).unref();
+    } else {
+      spawn('xdg-open', [url], { detached: true, stdio: 'ignore' }).unref();
+    }
+  } catch {
+    /* best effort */
+  }
+}
+
+/** Resolves to the packages/cli/src directory at runtime (ts/tsx -> .ts file). */
+const HERE = dirname(fileURLToPath(import.meta.url));
+
 const RUN_DIR = join(homedir(), '.selfclaude');
 export const PID_FILE = join(RUN_DIR, 'run.pid');
 /** Daemon stdout/stderr — Next.js compile output, listen errors, etc. */
@@ -135,13 +158,7 @@ export async function daemonStart(opts: DaemonStartOptions = {}): Promise<void> 
     console.log(`SelfClaude already running (pid ${existing}).`);
     console.log(`  Web UI: ${WEB_UI_URL(webPort)}`);
     console.log('  Stop:   selfclaude stop');
-    if (openBrowser) {
-      try {
-        spawn('open', [WEB_UI_URL(webPort)], { detached: true, stdio: 'ignore' }).unref();
-      } catch {
-        /* best effort */
-      }
-    }
+    if (openBrowser) spawnOpen(WEB_UI_URL(webPort));
     return;
   }
 
@@ -159,23 +176,26 @@ export async function daemonStart(opts: DaemonStartOptions = {}): Promise<void> 
   const err = openSync(LOG_FILE, 'a');
 
   // Re-spawn ourselves in --foreground mode, fully detached.
-  const child = spawn(
-    'selfclaude',
-    [
-      'start',
-      '--foreground',
-      '--no-open',
-      '--port',
-      String(apiPort),
-      '--web-port',
-      String(webPort),
-    ],
-    {
-      detached: true,
-      stdio: ['ignore', out, err],
-      env: { ...process.env, SELFCLAUDE_DAEMON: '1' },
-    },
-  );
+  // We cannot rely on `selfclaude` being on PATH (never linked in dev).
+  // Resolve selfclaude.mjs to an absolute path using __dirname — this is
+  // the packages/cli dir at runtime, so the launcher is one level up.
+  // We pass it as an absolute path so the child process doesn't need to
+  // do any path resolution of its own.
+  const LAUNCHER_ABS = join(dirname(fileURLToPath(import.meta.url)), '..', 'selfclaude.mjs');
+
+  // On Windows, cmd /c is required so node.exe can be resolved through PATH
+  // (spawn can't resolve .cmd/.bat files on its own).
+  const child = process.platform === 'win32'
+    ? spawn('cmd', ['/c', process.execPath, LAUNCHER_ABS, 'start', '--foreground', '--no-open', '--port', String(apiPort), '--web-port', String(webPort)], {
+        detached: true,
+        stdio: ['ignore', out, err],
+        env: { ...process.env, SELFCLAUDE_DAEMON: '1' },
+      })
+    : spawn(process.execPath, [LAUNCHER_ABS, 'start', '--foreground', '--no-open', '--port', String(apiPort), '--web-port', String(webPort)], {
+        detached: true,
+        stdio: ['ignore', out, err],
+        env: { ...process.env, SELFCLAUDE_DAEMON: '1' },
+      });
   child.unref();
 
   if (!child.pid) {
@@ -198,13 +218,7 @@ export async function daemonStart(opts: DaemonStartOptions = {}): Promise<void> 
     process.exit(1);
   }
 
-  if (openBrowser) {
-    try {
-      spawn('open', [WEB_UI_URL(webPort)], { detached: true, stdio: 'ignore' }).unref();
-    } catch {
-      /* best effort */
-    }
-  }
+  if (openBrowser) spawnOpen(WEB_UI_URL(webPort));
 
   console.log(`✓ SelfClaude started (pid ${child.pid})`);
   console.log(`  Web UI: ${WEB_UI_URL(webPort)}`);

@@ -3,9 +3,18 @@ import { Bot } from 'grammy';
 import { ENV_PATH, setEnvVar } from '../lib/env.js';
 import { log } from '../lib/log.js';
 
-/** 6-digit numeric pairing code drawn from a CSPRNG. */
+/**
+ * 8-character alphanumeric pairing code drawn from a CSPRNG.
+ * Character set: 0-9, A-Z (36 chars) → 36^8 ≈ 2.8 trillion ≈ 47 bits of entropy.
+ * Upgraded from 6-digit numeric (20 bits) to address CWE-332 concern.
+ */
 export function generatePairingCode(): string {
-  return String(randomInt(100_000, 1_000_000));
+  const CHARS = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  let code = '';
+  for (let i = 0; i < 8; i++) {
+    code += CHARS[randomInt(0, 36)]!;
+  }
+  return code;
 }
 
 export interface LinkResult {

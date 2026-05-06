@@ -69,11 +69,12 @@ test('setEnvVar rejects invalid env keys', async () => {
   });
 });
 
-test('generatePairingCode produces a 6-digit numeric string', () => {
+test('generatePairingCode produces an 8-char alphanumeric string (47-bit entropy)', () => {
   for (let i = 0; i < 50; i++) {
     const code = generatePairingCode();
-    assert.match(code, /^\d{6}$/, `unexpected code: ${code}`);
-    const n = Number(code);
-    assert.ok(n >= 100_000 && n < 1_000_000);
+    assert.match(code, /^[0-9A-Z]{8}$/, `unexpected code: ${code}`);
   }
+  // Uniqueness: 50 generations should all be different (p ≈ 1 - (1/36^8)^50 ≈ negligible collision chance)
+  const codes = new Set(Array.from({ length: 50 }, () => generatePairingCode()));
+  assert.equal(codes.size, 50, 'expected all 50 codes to be unique');
 });

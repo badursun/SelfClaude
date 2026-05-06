@@ -138,7 +138,7 @@ If the extension isn't installed, sup will simply note Chrome tools aren't avail
 | Module | Lives in | What it does |
 |---|---|---|
 | **Orchestrator** | `packages/core/src/orchestrator/` | FSM, message bus, agent dispatch, tag parser, file locks, bash safety, phase tracker. |
-| **Web API** | `packages/core/src/server/` | Fastify on :7423. REST + SSE per session. SessionManager handles create / destroy / event broadcast. |
+| **Web API** | `packages/core/src/server/` | Fastify on :7423. REST + SSE per session. SessionManager handles create / destroy + event broadcast. |
 | **Hooks** | `packages/core/src/hooks/` | Random-port HTTP bridge that bash hook scripts post into; PreToolUse decisions, file-lock queries, agent identity. |
 | **MCP** | `packages/core/src/mcp/` | stdio MCP server CC spawns; bridges `ask_user`, `request_user_approval`, `write_phase_doc`, `propose_item_done`, `propose_script`, `apply_agent_dna`, etc. |
 | **Agents** | `packages/core/src/agents/` | Registry + DNA template loader. Bundled prompts for supervisor / developer / ui-dev / security; project-level DNA addenda. |
@@ -146,6 +146,29 @@ If the extension isn't installed, sup will simply note Chrome tools aren't avail
 | **CLI** | `packages/cli/src/` | `selfclaude` binary + daemon control (start/stop/restart/logs/status). |
 | **Web UI** | `packages/web/` | Next.js 14 app router + react-resizable-panels + zustand + SSE client. |
 | **TUI (legacy)** | `packages/tui/` | Original Ink TUI — still works via `selfclaude start --tui`, deprecated. |
+
+## Security
+
+SelfClaude is designed for a single-user local workflow on a trusted machine. The daemon binds exclusively to `127.0.0.1` — it is **not reachable from other machines or the public internet**. No authentication is applied to the local API.
+
+### Trust model
+- The API server accepts connections only from `127.0.0.1` / `localhost` (IPv4 and IPv6 variants).
+- The web UI (Next.js on port 3000) proxies all `/api/*` calls to `127.0.0.1:7423`.
+- Claude Code subprocesses are spawned with sensitive environment variables stripped (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `ANTHROPIC_VERSION`).
+- SSE streams are gated to allowlisted `localhost` origins only.
+
+### Rate limiting
+The REST API applies rate limits to prevent abuse from runaway loops or misconfiguration:
+- **Default**: 200 requests / minute per IP
+- **Session create** (`POST /api/sessions`): 30 requests / minute
+- **Message endpoints** (`/api/sessions/:id/message`, `/api/sessions/:id/dev-message`, `/api/sessions/:id/agent-message`, `/api/sessions/:id/answer-question`, `/api/sessions/:id/decide-approval`): 60 requests / minute
+
+### Telegram pairing
+The Telegram bot requires an out-of-band pairing step (`selfclaude link-telegram`). The pairing code uses 47-bit entropy (8-char alphanumeric). The bot token and chat ID are never forwarded to Claude Code subprocesses.
+
+### Secrets
+- `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` live only in the `.env` file and the daemon's memory.
+- `ANTHROPIC_API_KEY` is managed by Claude Code's own configuration (`~/.claude/settings.json`), not via environment variables.
 
 ## Tests
 

@@ -4,9 +4,10 @@ import { homedir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import Fastify, { type FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
+import rateLimit from '@fastify/rate-limit';
 import { z } from 'zod';
 import { SessionManager } from './session-manager.js';
-import { streamSseFromEmitter } from './sse.js';
+import { resolveSseOrigin, streamSseFromEmitter } from './sse.js';
 import { addFavorite, listFavorites, removeFavorite } from './favorites.js';
 import { listRecents, removeRecent } from './recents.js';
 import { configureLogFile, log } from '../lib/log.js';
@@ -40,6 +41,20 @@ export function buildWebApi(manager: SessionManager): FastifyInstance {
     credentials: false,
   });
 
+  // Rate limiting — global defaults. Keys are IP addresses. These are
+  // conservative defaults for a localhost-only API; the primary defence
+  // remains OS-level socket isolation.
+  server.register(rateLimit, {
+    max: 200,
+    timeWindow: '1 minute',
+    keyGenerator: (req) => {
+      // Prefer X-Forwarded-For when behind a proxy; fall back to direct IP.
+      const fwd = req.headers['x-forwarded-for'];
+      if (typeof fwd === 'string') return fwd.split(',')[0]!.trim();
+      return req.ip ?? '127.0.0.1';
+    },
+  });
+
   server.get('/api/health', async () => ({
     version: VERSION,
     uptime: process.uptime(),
@@ -48,7 +63,11 @@ export function buildWebApi(manager: SessionManager): FastifyInstance {
 
   server.get('/api/sessions', async () => ({ sessions: manager.listSessions() }));
 
-  server.post('/api/sessions', async (req, reply) => {
+  // Sensible defaults — override on specific high-value routes below.
+  const RATE_LIMIT_OVERRIDE = { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } };
+  const MESSAGE_RATE_LIMIT = { config: { rateLimit: { max: 60, timeWindow: '1 minute' } } };
+
+  server.post('/api/sessions', { ...RATE_LIMIT_OVERRIDE }, async (req, reply) => {
     const Schema = z.object({ cwd: z.string().min(1), label: z.string().optional() });
     const parsed = Schema.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: parsed.error.message });
@@ -296,7 +315,7 @@ export function buildWebApi(manager: SessionManager): FastifyInstance {
     return history;
   });
 
-  server.post('/api/sessions/:id/message', async (req, reply) => {
+  server.post('/api/sessions/:id/message', { ...MESSAGE_RATE_LIMIT }, async (req, reply) => {
     const id = (req.params as { id: string }).id;
     const Schema = z.object({ text: z.string().min(1) });
     const parsed = Schema.safeParse(req.body);
@@ -309,7 +328,7 @@ export function buildWebApi(manager: SessionManager): FastifyInstance {
     }
   });
 
-  server.post('/api/sessions/:id/dev-message', async (req, reply) => {
+  server.post('/api/sessions/:id/dev-message', { ...MESSAGE_RATE_LIMIT }, async (req, reply) => {
     const id = (req.params as { id: string }).id;
     const Schema = z.object({ text: z.string().min(1) });
     const parsed = Schema.safeParse(req.body);
@@ -327,7 +346,7 @@ export function buildWebApi(manager: SessionManager): FastifyInstance {
    * roles). Same shape as `/dev-message` but takes the target `agent`
    * name. Used by the per-tab input bars in the agent pane.
    */
-  server.post('/api/sessions/:id/agent-message', async (req, reply) => {
+  server.post('/api/sessions/:id/agent-message', { ...MESSAGE_RATE_LIMIT }, async (req, reply) => {
     const id = (req.params as { id: string }).id;
     const Schema = z.object({
       agent: z.string().min(1),
@@ -343,7 +362,7 @@ export function buildWebApi(manager: SessionManager): FastifyInstance {
     }
   });
 
-  server.post('/api/sessions/:id/answer-question', async (req, reply) => {
+  server.post('/api/sessions/:id/answer-question', { ...MESSAGE_RATE_LIMIT }, async (req, reply) => {
     const id = (req.params as { id: string }).id;
     const Schema = z.object({ questionId: z.string(), answer: z.string() });
     const parsed = Schema.safeParse(req.body);
@@ -352,7 +371,7 @@ export function buildWebApi(manager: SessionManager): FastifyInstance {
     return { ok };
   });
 
-  server.post('/api/sessions/:id/decide-approval', async (req, reply) => {
+  server.post('/api/sessions/:id/decide-approval', { ...MESSAGE_RATE_LIMIT }, async (req, reply) => {
     const id = (req.params as { id: string }).id;
     const Schema = z.object({
       approvalId: z.string(),
@@ -406,7 +425,10 @@ export function buildWebApi(manager: SessionManager): FastifyInstance {
     if (!ctx) {
       return reply.code(404).send({ error: 'session not found' });
     }
-    streamSseFromEmitter(reply, ctx.emitter);
+    // Pass the validated origin so SSE CORS headers are origin-specific,
+    // not a blanket wildcard (CWE-942 mitigation).
+    const allowedOrigin = resolveSseOrigin(req);
+    streamSseFromEmitter(reply, ctx.emitter, allowedOrigin);
   });
 
   /**

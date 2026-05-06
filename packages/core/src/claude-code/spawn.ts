@@ -10,6 +10,48 @@ export type Role = 'supervisor' | 'developer';
 
 export type PermissionMode = 'default' | 'acceptEdits' | 'bypassPermissions' | 'plan';
 
+/**
+ * Env vars that are NEVER forwarded to Claude Code subprocesses.
+ * These contain sensitive credentials that Claude Code does not need
+ * and should not have access to (CWE-214 mitigation).
+ *
+ * The orchestrator injects only the vars it explicitly controls
+ * via `envOverrides` (SELFCLAUDE_ORCH_URL, SELFCLAUDE_ROLE,
+ * SELFCLAUDE_AGENT).
+ */
+const BLOCKED_ENV_VARS = new Set([
+  'TELEGRAM_BOT_TOKEN',
+  'TELEGRAM_CHAT_ID',
+  // Any ANTHROPIC_ vars should flow from CC's own config, not the parent's.
+  // CC reads ~/.claude/settings.json for its API key — no env var needed here.
+  'ANTHROPIC_API_KEY',
+  'ANTHROPIC_BASE_URL',
+  'ANTHROPIC_VERSION',
+]);
+
+/**
+ * Build the subprocess environment: inherit process.env, but strip
+ * BLOCKED_ENV_VARS so sensitive tokens don't leak into the CC subprocess.
+ * The orchestrator's explicit `envOverrides` (SELFCLAUDE_ORCH_URL, etc.)
+ * are merged on top — they intentionally override any filtered values.
+ */
+function buildSubprocessEnv(envOverrides?: Record<string, string>): NodeJS.ProcessEnv {
+  const base: Record<string, string> = {};
+  for (const [key, value] of Object.entries(process.env)) {
+    if (!BLOCKED_ENV_VARS.has(key) && value !== undefined) {
+      base[key] = value;
+    }
+  }
+  if (envOverrides) {
+    for (const [key, value] of Object.entries(envOverrides)) {
+      if (value !== undefined) {
+        base[key] = value;
+      }
+    }
+  }
+  return base;
+}
+
 export interface SpawnOptions {
   role: Role;
   cwd: string;
@@ -87,7 +129,7 @@ export function runClaudeTurn(
   return new Promise((resolve, reject) => {
     const child = spawn(binary, args, {
       cwd: opts.cwd,
-      env: { ...process.env, ...opts.envOverrides },
+      env: buildSubprocessEnv(opts.envOverrides),
       stdio: ['pipe', 'pipe', 'pipe'],
       signal: opts.signal,
     });
