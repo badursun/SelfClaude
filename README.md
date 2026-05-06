@@ -6,19 +6,27 @@ SelfClaude is the layer above [Claude Code](https://docs.claude.com/en/docs/clau
 
 ## Install
 
-One line on macOS / Linux. Requires Node 20+, git, and the [Claude Code CLI](https://docs.claude.com/en/docs/claude-code/quickstart) installed + signed in:
+One line. Requires Node 20+, git, and the [Claude Code CLI](https://docs.claude.com/en/docs/claude-code/quickstart) installed + signed in.
 
+**macOS / Linux:**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/badursun/SelfClaude/main/install.sh | bash
 ```
 
-The installer:
-1. Pre-flights Node, pnpm (auto-bootstrapped via corepack), and `claude`.
-2. Clones SelfClaude into `~/.selfclaude/app`.
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/badursun/SelfClaude/main/install.ps1 | iex
+```
+
+The installer (both platforms):
+1. Pre-flights Node, pnpm, `claude` CLI, and `git`.
+2. Clones SelfClaude into `~/.selfclaude/app` (or pulls if already there).
 3. Installs dependencies (`pnpm install --frozen-lockfile`).
-4. Symlinks a global `selfclaude` command into `/usr/local/bin` or `~/.local/bin`.
+4. Registers a global `selfclaude` command in your PATH.
 
 Re-run the same command to update — it's idempotent.
+
+**Note for Windows users:** The `selfclaude` command is registered via a `.cmd` launcher. Restart your terminal (or open a new one) after installation so the updated PATH takes effect.
 
 ## Quickstart
 
@@ -182,16 +190,16 @@ pnpm typecheck         # all packages
 
 - **`claude: command not found`** — install Claude Code: <https://docs.claude.com/en/docs/claude-code/quickstart>
 - **"Tab reappears after close"** — should be fixed in current main; if you see it, share `selfclaude logs --orchestrator | tail -30` in an issue.
-- **Stale daemon after a crash** — `selfclaude stop` (handles stale PID files). If unrecoverable: `rm ~/.selfclaude/run.pid && selfclaude start`.
+- **Stale daemon after a crash** — `selfclaude stop` (handles stale PID files). If unrecoverable: `del %USERPROFILE%\.selfclaude\run.pid && selfclaude start`.
 - **Telegram not working** — `selfclaude doctor` checks bot reachability + chat pairing.
 - **Web UI shows "Lost connection"** — backend likely crashed; check `selfclaude logs | tail -50` for stack traces.
+- **`selfclaude' is not recognized`** (Windows) — restart your terminal to pick up the updated PATH. If still not working, run `install.ps1` again and verify `%LOCALAPPDATA%\Programs\selfclaude\bin` is on your PATH (`$env:Path` in PowerShell).
 
 ## Status
 
-v0.0.1 — first public release. Core orchestration, web UI, multi-agent dispatch, phase tracker, scripts, MCP telemetry, DNA templates all working. Things expected to evolve:
+v0.0.1 — first public release. Core orchestration, web UI, multi-agent dispatch, phase tracker, scripts, MCP telemetry, DNA templates, rate limiting, and Windows/macOS/Linux support all working. Things expected to evolve:
 
 - Custom DNA template UI (currently bundled-only)
-- Linux / Windows compatibility beyond minimum (bash hook scripts assume bash 4+, lsof, ps)
 - Per-agent metrics breakdown
 - Daemon mode auto-start (launchd / systemd plist generators)
 
