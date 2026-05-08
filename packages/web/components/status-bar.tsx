@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import { IsolationWidget } from '@/components/isolation-widget';
 import type { SessionMeta } from '@/lib/types';
 import { cn } from '@/lib/cn';
+import { useTranslation } from '../lib/i18n';
 
 /**
  * Phase 3 demo: derive both whether this is a demo session and the
@@ -30,6 +31,7 @@ function demoArtifactPath(cwd: string): string | null {
  * favorites list without having to navigate back home and find it.
  */
 export function StatusBar({ meta }: { meta: SessionMeta | null; busy?: boolean }) {
+  const { t } = useTranslation();
   const [pinned, setPinned] = useState<boolean | null>(null);
   const [pinPending, setPinPending] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -90,8 +92,8 @@ export function StatusBar({ meta }: { meta: SessionMeta | null; busy?: boolean }
       <Link
         href="/"
         className="text-zinc-400 hover:text-zinc-200"
-        aria-label="back to home"
-        title="Back to home"
+        aria-label={t('statusBar.backToHome.ariaLabel')}
+        title={t('statusBar.backToHome.title')}
       >
         <ChevronLeft size={16} />
       </Link>
@@ -100,7 +102,7 @@ export function StatusBar({ meta }: { meta: SessionMeta | null; busy?: boolean }
         type="button"
         onClick={copyCwd}
         className="group flex items-center gap-1.5 min-w-0 text-xs text-zinc-500 hover:text-zinc-200 px-1 py-0.5 rounded hover:bg-bg-elevated"
-        title={copied ? 'copied!' : 'copy path'}
+        title={copied ? t('common.copied') : t('statusBar.copyPath')}
       >
         <code className="truncate">{meta?.cwd ?? ''}</code>
         {copied ? (
@@ -124,18 +126,18 @@ export function StatusBar({ meta }: { meta: SessionMeta | null; busy?: boolean }
               : 'text-zinc-400 hover:text-amber-300 hover:bg-bg-elevated',
             pinPending && 'opacity-50 cursor-wait',
           )}
-          title={pinned ? 'Unpin from home' : 'Pin to home'}
+          title={pinned ? t('statusBar.unpinFromHome') : t('statusBar.pinToHome')}
           aria-pressed={pinned ?? false}
         >
           {pinned ? (
             <>
               <Pin size={13} className="fill-amber-400 text-amber-400" />
-              <span className="hidden sm:inline">Pinned</span>
+              <span className="hidden sm:inline">{t('statusBar.pinned')}</span>
             </>
           ) : (
             <>
               <PinOff size={13} />
-              <span className="hidden sm:inline">Pin</span>
+              <span className="hidden sm:inline">{t('statusBar.pin')}</span>
             </>
           )}
         </button>
@@ -156,6 +158,7 @@ export function StatusBar({ meta }: { meta: SessionMeta | null; busy?: boolean }
  * error from the API rather than a silently disabled button.
  */
 function DemoOpenButton({ cwd }: { cwd: string }) {
+  const { t } = useTranslation();
   const artifactPath = demoArtifactPath(cwd);
   const [exists, setExists] = useState(false);
   const [pending, setPending] = useState(false);
@@ -216,10 +219,10 @@ function DemoOpenButton({ cwd }: { cwd: string }) {
           'ring-1 ring-cyan-300/60 transition-colors',
           pending && 'opacity-70 cursor-wait',
         )}
-        title="Demo ready — open the generated index.html in your browser"
+        title={t('statusBar.demo.title')}
       >
         <Sparkles size={14} className="text-cyan-100" />
-        <span>Open Result</span>
+        <span>{t('statusBar.demo.openResult')}</span>
         <ExternalLink size={12} className="opacity-90" />
       </button>
     </div>

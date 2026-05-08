@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { CheckCircle2, X } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 
 /**
  * Floating top-right toast that pops up whenever ALL agents in the
@@ -14,6 +15,7 @@ import { CheckCircle2, X } from 'lucide-react';
  * session WAS busy — boot-time idle doesn't fire anything.
  */
 export function IdleToast({ busy }: { busy: boolean }) {
+  const { t } = useTranslation();
   const [show, setShow] = useState(false);
   // Track the previous busy value so we only fire on a true→false edge.
   const prevBusyRef = useRef<boolean | null>(null);
@@ -47,14 +49,14 @@ export function IdleToast({ busy }: { busy: boolean }) {
     >
       <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
       <div className="flex-1 text-[12px] leading-tight">
-        <div className="font-semibold">All agents idle</div>
+        <div className="font-semibold">{t('idleToast.title')}</div>
         <div className="text-[11px] text-emerald-300/80">
-          Waiting for your next instruction.
+          {t('idleToast.body')}
         </div>
       </div>
       <button
         onClick={() => setShow(false)}
-        aria-label="dismiss"
+        aria-label={t('common.dismiss')}
         className="text-emerald-300 hover:text-white p-1 rounded hover:bg-emerald-900/50"
       >
         <X size={12} />

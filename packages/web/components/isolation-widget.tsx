@@ -5,6 +5,7 @@ import { Check, GitBranch, Loader2, RotateCcw, Trash2 } from 'lucide-react';
 import { api, type IsolationStateView } from '@/lib/api';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { cn } from '@/lib/cn';
+import { useTranslation } from '../lib/i18n';
 
 /**
  * Phase 5 (Trust v1) — status-bar widget for git branch isolation.
@@ -26,6 +27,7 @@ import { cn } from '@/lib/cn';
  * trigger when the rendering tree shape varies across renders.
  */
 export function IsolationWidget({ sessionId }: { sessionId: string }) {
+  const { t, plural } = useTranslation();
   const [state, setState] = useState<IsolationStateView | null>(null);
   const [pending, setPending] = useState<
     'idle' | 'starting' | 'accepting' | 'discarding'
@@ -58,13 +60,11 @@ export function IsolationWidget({ sessionId }: { sessionId: string }) {
     if (!state) return;
     if (pending !== 'idle') return;
     if (state.repoState.dirty) {
-      setError(
-        'commit or stash your pending changes first — isolation refuses to fork off a dirty tree',
-      );
+      setError(t('isolationWidget.error.dirty'));
       return;
     }
     if (!state.repoState.currentBranch) {
-      setError('check out a branch first (HEAD is detached)');
+      setError(t('isolationWidget.error.detachedHead'));
       return;
     }
     setError(null);
@@ -79,7 +79,7 @@ export function IsolationWidget({ sessionId }: { sessionId: string }) {
     } finally {
       setPending('idle');
     }
-  }, [state, pending, sessionId, refresh]);
+  }, [state, pending, sessionId, refresh, t]);
 
   // Accept / Discard click handlers just open the confirm dialog —
   // the actual git op fires from `runConfirmedAction` below after the
@@ -158,17 +158,17 @@ export function IsolationWidget({ sessionId }: { sessionId: string }) {
           content = (
             <div
               className="flex items-center gap-2 px-2 py-1 rounded text-xs font-medium text-amber-200 bg-amber-950/40 border border-amber-700/40"
-              title={`Persisted isolation references ${isolation.branch} but the branch is gone. Reset to clean up state.`}
+              title={t('isolationWidget.drift.label')}
             >
               <RotateCcw size={12} />
-              <span>isolation drift</span>
+              <span>{t('isolationWidget.drift.label')}</span>
               <button
                 type="button"
                 onClick={onDiscard}
                 disabled={pending !== 'idle'}
                 className="px-1.5 py-px rounded text-[10px] bg-amber-900/60 hover:bg-amber-800 text-amber-100"
               >
-                Reset
+                {t('isolationWidget.drift.resetButton')}
               </button>
             </div>
           );
@@ -180,16 +180,18 @@ export function IsolationWidget({ sessionId }: { sessionId: string }) {
             <div className="flex items-center gap-1.5">
               <div
                 className="flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium text-cyan-100 bg-cyan-950/40 border border-cyan-800/40"
-                title={
-                  `Isolation active on ${isolation.branch} (forked from ${isolation.originalBranch}). ` +
-                  `${commitCount} commit(s), ${branchStatus?.filesChanged ?? 0} file(s) changed.`
-                }
+                title={t('isolationWidget.active.title', {
+                  branch: isolation.branch,
+                  originalBranch: isolation.originalBranch,
+                  commitCount,
+                  filesChanged: branchStatus?.filesChanged ?? 0,
+                })}
               >
                 <GitBranch size={12} />
                 <span className="font-mono">{shortBranch}</span>
                 <span className="text-cyan-400/80">·</span>
                 <span className="tabular-nums">
-                  {commitCount} commit{commitCount === 1 ? '' : 's'}
+                  {plural('isolationWidget.active.commit', commitCount)}
                 </span>
               </div>
               <button
@@ -201,14 +203,17 @@ export function IsolationWidget({ sessionId }: { sessionId: string }) {
                   'text-emerald-100 bg-emerald-700/40 hover:bg-emerald-600/60 border border-emerald-700/40',
                   pending !== 'idle' && 'opacity-60 cursor-wait',
                 )}
-                title={`Squash-merge ${isolation.branch} into ${isolation.originalBranch}`}
+                title={t('isolationWidget.accept.title', {
+                  branch: isolation.branch,
+                  originalBranch: isolation.originalBranch,
+                })}
               >
                 {pending === 'accepting' ? (
                   <Loader2 size={11} className="animate-spin" />
                 ) : (
                   <Check size={11} />
                 )}
-                <span>Accept</span>
+                <span>{t('isolationWidget.accept')}</span>
               </button>
               <button
                 type="button"
@@ -219,14 +224,14 @@ export function IsolationWidget({ sessionId }: { sessionId: string }) {
                   'text-rose-100 bg-rose-900/40 hover:bg-rose-800/60 border border-rose-800/40',
                   pending !== 'idle' && 'opacity-60 cursor-wait',
                 )}
-                title={`Discard ${isolation.branch} entirely (irreversible)`}
+                title={t('isolationWidget.discard.title', { branch: isolation.branch })}
               >
                 {pending === 'discarding' ? (
                   <Loader2 size={11} className="animate-spin" />
                 ) : (
                   <Trash2 size={11} />
                 )}
-                <span>Discard</span>
+                <span>{t('isolationWidget.discard')}</span>
               </button>
               {error && (
                 <span
@@ -253,8 +258,8 @@ export function IsolationWidget({ sessionId }: { sessionId: string }) {
             )}
             title={
               repo.dirty
-                ? 'commit or stash pending changes first — isolation refuses to fork off a dirty tree'
-                : `fork a session branch off ${repo.currentBranch} so this run is reversible`
+                ? t('isolationWidget.error.dirty')
+                : t('isolationWidget.isolate.title', { currentBranch: repo.currentBranch ?? '' })
             }
           >
             {pending === 'starting' ? (
@@ -262,7 +267,7 @@ export function IsolationWidget({ sessionId }: { sessionId: string }) {
             ) : (
               <GitBranch size={11} />
             )}
-            <span>Isolate</span>
+            <span>{t('isolationWidget.isolate')}</span>
             {error && (
               <span className="text-[10px] text-rose-300 max-w-[140px] truncate" title={error}>
                 {error}
@@ -282,22 +287,22 @@ export function IsolationWidget({ sessionId }: { sessionId: string }) {
   const dialogProps =
     confirmAction === 'accept' && isolation
       ? {
-          title: `Squash-merge into ${isolation.originalBranch}?`,
-          message:
-            `Collapse ${branchStatus?.commitCount ?? 0} commit(s) on ${isolation.branch} ` +
-            `into ONE squash commit on ${isolation.originalBranch}, then delete ${isolation.branch}.\n\n` +
-            `The per-turn granular history disappears — be sure first.`,
-          confirmLabel: 'Squash & accept',
+          title: t('isolationWidget.dialog.accept.title', { originalBranch: isolation.originalBranch }),
+          message: t('isolationWidget.dialog.accept.message', {
+            commitCount: branchStatus?.commitCount ?? 0,
+            branch: isolation.branch,
+            originalBranch: isolation.originalBranch,
+          }),
+          confirmLabel: t('isolationWidget.dialog.accept.confirm'),
           variant: 'default' as const,
         }
       : confirmAction === 'discard' && isolation
         ? {
-            title: `Discard ${isolation.branch}?`,
-            message:
-              `Every commit on the branch + any uncommitted changes will be wiped. ` +
-              `Worktree returns to ${isolation.originalBranch}'s HEAD.\n\n` +
-              `There is no undo.`,
-            confirmLabel: 'Discard',
+            title: t('isolationWidget.dialog.discard.title', { branch: isolation.branch }),
+            message: t('isolationWidget.dialog.discard.message', {
+              originalBranch: isolation.originalBranch,
+            }),
+            confirmLabel: t('isolationWidget.dialog.discard.confirm'),
             variant: 'danger' as const,
           }
         : null;

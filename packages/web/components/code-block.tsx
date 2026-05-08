@@ -4,6 +4,7 @@ import { Children, isValidElement, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Check, Copy, Maximize2, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { useTranslation } from '../lib/i18n';
 
 /**
  * Drop-in replacement for `<pre>` inside the bubble-md markdown renderer.
@@ -30,6 +31,7 @@ import { cn } from '@/lib/cn';
  * syntax colours carry over to the modal too.
  */
 export function CodeBlock({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const language = readLanguage(children);
   const codeText = nodeToText(children);
   const [copied, setCopied] = useState(false);
@@ -50,22 +52,22 @@ export function CodeBlock({ children }: { children: ReactNode }) {
       <div className="code-block my-3 rounded-md border border-zinc-700 bg-zinc-950/70 overflow-hidden">
         <div className="flex items-center justify-between px-2.5 py-1 bg-zinc-800/80 border-b border-zinc-700">
           <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-300 font-semibold">
-            {language || 'code'}
+            {language || t('codeBlock.fallback')}
           </span>
           <div className="flex items-center gap-0.5">
             <button
               onClick={() => setModalOpen(true)}
               className="p-1 rounded text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700/60"
-              aria-label="view full"
-              title="view full"
+              aria-label={t('codeBlock.viewFull')}
+              title={t('codeBlock.viewFull')}
             >
               <Maximize2 size={11} />
             </button>
             <button
               onClick={handleCopy}
               className="p-1 rounded text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700/60"
-              aria-label="copy code"
-              title={copied ? 'copied!' : 'copy code'}
+              aria-label={t('codeBlock.copyCode')}
+              title={copied ? t('common.copied') : t('codeBlock.copyCode')}
             >
               {copied ? <Check size={11} className="text-emerald-300" /> : <Copy size={11} />}
             </button>
@@ -115,6 +117,7 @@ function CodeModal({
   rendered: ReactNode;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -145,7 +148,7 @@ function CodeModal({
       >
         <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-bg-elevated">
           <span className="text-[11px] font-mono uppercase tracking-widest text-zinc-200 font-semibold flex-1">
-            {language || 'code'}
+            {language || t('codeBlock.fallback')}
           </span>
           <button
             onClick={handleCopy}
@@ -154,19 +157,19 @@ function CodeModal({
             {copied ? (
               <>
                 <Check size={12} className="text-emerald-400" />
-                copied
+                {t('common.copied')}
               </>
             ) : (
               <>
                 <Copy size={12} />
-                copy
+                {t('common.copy')}
               </>
             )}
           </button>
           <button
             onClick={onClose}
             className="p-1 rounded text-zinc-400 hover:text-zinc-100"
-            aria-label="close"
+            aria-label={t('common.close')}
           >
             <X size={14} />
           </button>

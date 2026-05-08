@@ -2,6 +2,7 @@
 
 import { AlertOctagon, AlertTriangle, Info, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { useTranslation } from '../lib/i18n';
 
 /**
  * Phase 7 sprint 2 — themed banner atom for session-level surfaces
@@ -40,6 +41,7 @@ export function SessionBanner({
   /** Operator clicked X. Caller can also use this for action callbacks. */
   onDismiss?: () => void;
 }) {
+  const { t } = useTranslation();
   if (!open) return null;
   const icon =
     severity === 'info' ? (
@@ -79,7 +81,7 @@ export function SessionBanner({
           type="button"
           onClick={onDismiss}
           className="shrink-0 p-0.5 rounded text-current opacity-70 hover:opacity-100 hover:bg-white/10"
-          aria-label="dismiss"
+          aria-label={t('sessionBanner.dismiss')}
         >
           <X size={12} />
         </button>

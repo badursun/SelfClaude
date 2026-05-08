@@ -5,6 +5,7 @@ import { Check, Copy, FileText, Pencil, Save, X } from 'lucide-react';
 import hljs from 'highlight.js/lib/common';
 import { cn } from '@/lib/cn';
 import { api, type ProjectFile } from '@/lib/api';
+import { useTranslation } from '../lib/i18n';
 
 /**
  * Read-only modal that previews any file inside the session's cwd. Used
@@ -29,6 +30,7 @@ export function FilePreviewModal({
   /** If true, modal opens in edit mode and exposes a Save button. */
   editable?: boolean;
 }) {
+  const { t } = useTranslation();
   const [file, setFile] = useState<ProjectFile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pathCopied, setPathCopied] = useState(false);
@@ -127,7 +129,7 @@ export function FilePreviewModal({
             <button
               onClick={() => setEditing(true)}
               className="text-zinc-400 hover:text-zinc-100 p-1 rounded hover:bg-zinc-800/60 flex items-center gap-1 text-[10px]"
-              title="edit"
+              title={t('common.edit')}
             >
               <Pencil size={12} />
             </button>
@@ -142,16 +144,16 @@ export function FilePreviewModal({
                   ? 'bg-cyan-600 hover:bg-cyan-500 text-white'
                   : 'bg-zinc-800 text-zinc-500 cursor-not-allowed',
               )}
-              title="save (⌘S)"
+              title={t('filePreview.save.title')}
             >
               <Save size={11} />
-              {saving ? 'saving…' : 'save'}
+              {saving ? t('common.saving') : t('common.save')}
             </button>
           )}
           <button
             onClick={handleCopyPath}
             className="text-zinc-400 hover:text-zinc-100 p-1 rounded hover:bg-zinc-800/60 flex items-center gap-1 text-[10px]"
-            title={pathCopied ? 'copied!' : 'copy path'}
+            title={pathCopied ? t('common.copied') : t('filePreview.copyPath')}
           >
             {pathCopied ? (
               <Check size={12} className="text-emerald-400" />
@@ -162,20 +164,20 @@ export function FilePreviewModal({
           <button
             onClick={onClose}
             className="text-zinc-400 hover:text-zinc-100 p-1 rounded hover:bg-zinc-800/60"
-            aria-label="close preview"
+            aria-label={t('filePreview.close')}
           >
             <X size={14} />
           </button>
         </div>
         {saveError && (
           <div className="px-3 py-1.5 text-[11px] text-red-400 bg-red-950/40 border-b border-red-900/50">
-            save failed: {saveError}
+            {t('filePreview.error.saveFailed', { error: saveError ?? '' })}
           </div>
         )}
         <div className="flex-1 overflow-hidden flex flex-col">
           {error && <div className="p-4 text-xs text-red-400">{error}</div>}
           {!file && !error && (
-            <div className="p-4 text-xs text-zinc-500 italic">loading…</div>
+            <div className="p-4 text-xs text-zinc-500 italic">{t('common.loading')}</div>
           )}
           {file && !editing && <PreviewBody path={path} content={file.content} />}
           {file && editing && (

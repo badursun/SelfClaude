@@ -63,6 +63,7 @@ import type {
   PhaseTrackerPhase,
 } from '@/lib/types';
 import { useSessionStore } from '@/lib/store';
+import { useTranslation, getTranslation, type TranslationKey } from '../lib/i18n';
 import { FilePreviewModal } from './file-preview-modal';
 import { SettingsModal } from './settings-modal';
 
@@ -121,6 +122,7 @@ export function RightRail({
   /** Pending-script count → drives the red dot on the scripts rail button. */
   pendingScripts: number;
 }) {
+  const { t, plural } = useTranslation();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
@@ -129,36 +131,36 @@ export function RightRail({
         <RailButton
           active={expanded}
           icon={expanded ? <PanelRightClose size={15} /> : <PanelRightOpen size={15} />}
-          label={expanded ? 'hide' : 'show'}
-          title={expanded ? 'collapse panel' : 'expand panel'}
+          label={expanded ? t('rightSidebar.rail.hide') : t('rightSidebar.rail.show')}
+          title={expanded ? t('rightSidebar.rail.collapse') : t('rightSidebar.rail.expand')}
           onClick={onToggleExpanded}
         />
         <RailButton
           active={expanded && activeTab === 'tool-detail'}
           icon={<Wrench size={15} />}
-          label="tool"
-          title="Tool Detail"
+          label={t('rightSidebar.rail.tool.label')}
+          title={t('rightSidebar.rail.tool.title')}
           onClick={() => onActivateTab('tool-detail')}
         />
         <RailButton
           active={expanded && activeTab === 'tasks'}
           icon={<ListChecks size={15} />}
-          label="tasks"
-          title="Tasks (TodoWrite)"
+          label={t('rightSidebar.rail.tasks.label')}
+          title={t('rightSidebar.rail.tasks.title')}
           onClick={() => onActivateTab('tasks')}
         />
         <RailButton
           active={expanded && activeTab === 'schedule'}
           icon={<AlarmClock size={15} />}
-          label="sched"
-          title="Schedule (wakeups + crons)"
+          label={t('rightSidebar.rail.schedule.label')}
+          title={t('rightSidebar.rail.schedule.title')}
           onClick={() => onActivateTab('schedule')}
         />
         <RailButton
           active={expanded && activeTab === 'files-touched'}
           icon={<FileEdit size={15} />}
-          label="files"
-          title="Files Touched"
+          label={t('rightSidebar.rail.files.label')}
+          title={t('rightSidebar.rail.files.title')}
           onClick={() => onActivateTab('files-touched')}
         />
         {/* Visual separator between live-execution panels and project-context panels. */}
@@ -166,53 +168,53 @@ export function RightRail({
         <RailButton
           active={expanded && activeTab === 'phases'}
           icon={<ListTodo size={15} />}
-          label="phases"
-          title="Phases"
+          label={t('rightSidebar.rail.phases.label')}
+          title={t('rightSidebar.rail.phases.title')}
           onClick={() => onActivateTab('phases')}
         />
         <RailButton
           active={expanded && activeTab === 'audit'}
           icon={<History size={15} />}
-          label="audit"
-          title="Audit Log (phase tracker history)"
+          label={t('rightSidebar.rail.audit.label')}
+          title={t('rightSidebar.rail.audit.title')}
           onClick={() => onActivateTab('audit')}
         />
         <RailButton
           active={expanded && activeTab === 'memory'}
           icon={<Brain size={15} />}
-          label="memory"
-          title="Memory"
+          label={t('rightSidebar.rail.memory.label')}
+          title={t('rightSidebar.rail.memory.title')}
           onClick={() => onActivateTab('memory')}
         />
         <RailButton
           active={expanded && activeTab === 'decisions'}
           icon={<Gavel size={15} />}
-          label="decide"
-          title="Decision Room (verdicts)"
+          label={t('rightSidebar.rail.decisions.label')}
+          title={t('rightSidebar.rail.decisions.title')}
           onClick={() => onActivateTab('decisions')}
         />
         <RailButton
           active={expanded && activeTab === 'room'}
           icon={<MessagesSquare size={15} />}
-          label="room"
-          title="AgentsRoom (free chat)"
+          label={t('rightSidebar.rail.room.label')}
+          title={t('rightSidebar.rail.room.title')}
           onClick={() => onActivateTab('room')}
         />
         <RailButton
           active={expanded && activeTab === 'stack'}
           icon={<Boxes size={15} />}
-          label="stack"
-          title="Stack (tech manifest)"
+          label={t('rightSidebar.rail.stack.label')}
+          title={t('rightSidebar.rail.stack.title')}
           onClick={() => onActivateTab('stack')}
         />
         <RailButton
           active={expanded && activeTab === 'scripts'}
           icon={<TerminalSquare size={15} />}
-          label="scripts"
+          label={t('rightSidebar.rail.scripts.label')}
           title={
             pendingScripts > 0
-              ? `Scripts — ${pendingScripts} pending review`
-              : 'Scripts (Bash macros proposed by sup)'
+              ? t('rightSidebar.rail.scripts.titleWithPending', { count: pendingScripts })
+              : t('rightSidebar.rail.scripts.title')
           }
           badge={pendingScripts > 0 ? pendingScripts : undefined}
           onClick={() => onActivateTab('scripts')}
@@ -222,8 +224,8 @@ export function RightRail({
         <RailButton
           active={settingsOpen}
           icon={<Settings size={15} />}
-          label="setup"
-          title="Settings"
+          label={t('rightSidebar.rail.settings.label')}
+          title={t('rightSidebar.rail.settings.title')}
           onClick={() => setSettingsOpen(true)}
         />
       </div>
@@ -252,6 +254,7 @@ export function RightPanelContent({
   derived: DerivedState | null;
   activeTab: RightTab;
 }) {
+  const { t } = useTranslation();
   const [previewPath, setPreviewPath] = useState<string | null>(null);
   const [editPath, setEditPath] = useState<string | null>(null);
 
@@ -260,7 +263,7 @@ export function RightPanelContent({
       <div className="h-full flex flex-col bg-zinc-900/70 border-l-2 border-border-strong min-w-0">
         <div className="h-7 flex items-center px-2.5 border-b-2 border-border-strong bg-zinc-900">
           <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-300 font-semibold">
-            {RIGHT_TAB_LABELS[activeTab]}
+            {RIGHT_TAB_LABELS[activeTab](t)}
           </span>
           {activeTab === 'decisions' && (
             <ExportDecisionsButton chatLog={chatLog} sessionId={sessionId} />
@@ -314,18 +317,18 @@ export function RightPanelContent({
   );
 }
 
-const RIGHT_TAB_LABELS: Record<RightTab, string> = {
-  'tool-detail': 'tool detail',
-  tasks: 'tasks',
-  schedule: 'schedule',
-  'files-touched': 'files touched',
-  phases: 'phases',
-  audit: 'audit log',
-  memory: 'memory',
-  decisions: 'decisions',
-  room: 'agents room',
-  stack: 'stack',
-  scripts: 'scripts',
+const RIGHT_TAB_LABELS: Record<RightTab, (t: (key: TranslationKey) => string) => string> = {
+  'tool-detail': (t) => t('rightSidebar.tab.toolDetail'),
+  tasks: (t) => t('rightSidebar.tab.tasks'),
+  schedule: (t) => t('rightSidebar.tab.schedule'),
+  'files-touched': (t) => t('rightSidebar.tab.filesTouched'),
+  phases: (t) => t('rightSidebar.tab.phases'),
+  audit: (t) => t('rightSidebar.tab.audit'),
+  memory: (t) => t('rightSidebar.tab.memory'),
+  decisions: (t) => t('rightSidebar.tab.decisions'),
+  room: (t) => t('rightSidebar.tab.room'),
+  stack: (t) => t('rightSidebar.tab.stack'),
+  scripts: (t) => t('rightSidebar.tab.scripts'),
 };
 
 function RailButton({
@@ -346,6 +349,7 @@ function RailButton({
   badge?: number;
   onClick: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <button
       type="button"
@@ -362,7 +366,7 @@ function RailButton({
         {icon}
         {badge !== undefined && badge > 0 && (
           <span className="absolute -top-1.5 -right-2 min-w-[14px] h-[14px] px-1 rounded-full bg-red-500 text-white text-[9px] font-mono font-bold flex items-center justify-center tabular-nums shadow-md shadow-red-900/40">
-            {badge > 9 ? '9+' : badge}
+            {badge > 9 ? t('rightSidebar.badgeOverflow') : badge}
           </span>
         )}
       </span>
@@ -382,11 +386,12 @@ function ToolDetailPanel({
   chatLog: ChatLogEntry[];
   selectedToolUseId: string | null;
 }) {
+  const { t } = useTranslation();
   if (!selectedToolUseId) {
     return (
       <div className="h-full p-4 text-sm text-zinc-500 space-y-2">
         <p className="text-zinc-400">
-          Click a tool call in the timeline to see its full input and result here.
+          {t('rightSidebar.toolDetail.empty')}
         </p>
       </div>
     );
@@ -416,7 +421,7 @@ function ToolDetailPanel({
     | undefined;
 
   if (!call) {
-    return <div className="p-4 text-sm text-zinc-500">Tool call not found.</div>;
+    return <div className="p-4 text-sm text-zinc-500">{t('rightSidebar.toolDetail.notFound')}</div>;
   }
 
   const inputLang = guessInputLanguage(call.name);
@@ -430,17 +435,17 @@ function ToolDetailPanel({
         <code className="font-medium text-blue-300">{call.name}</code>
       </div>
 
-      <CodeBlock label="input" language={inputLang} code={inputText} />
+      <CodeBlock label={t('rightSidebar.toolDetail.input')} language={inputLang} code={inputText} />
 
       {result ? (
         <CodeBlock
-          label={result.isError ? '✗ result (error)' : '✓ result'}
+          label={result.isError ? t('rightSidebar.toolDetail.resultError') : t('rightSidebar.toolDetail.resultOk')}
           labelColor={result.isError ? 'text-red-400' : 'text-emerald-400'}
           language={resultLang}
-          code={result.text || '(empty)'}
+          code={result.text || t('rightSidebar.toolDetail.resultEmpty')}
         />
       ) : (
-        <div className="text-[11px] text-zinc-500 italic">awaiting result…</div>
+        <div className="text-[11px] text-zinc-500 italic">{t('rightSidebar.toolDetail.awaitingResult')}</div>
       )}
     </div>
   );
@@ -542,10 +547,11 @@ interface Todo {
 }
 
 function TasksPanel({ todos }: { todos: Todo[] | null }) {
+  const { t } = useTranslation();
   if (!todos) {
-    return <Empty>No task list yet (developer hasn't called TodoWrite).</Empty>;
+    return <Empty>{t('rightSidebar.tasks.noList')}</Empty>;
   }
-  if (todos.length === 0) return <Empty>Task list empty.</Empty>;
+  if (todos.length === 0) return <Empty>{t('rightSidebar.tasks.empty')}</Empty>;
   return (
     <ul className="p-2 space-y-1">
       {todos.map((t, i) => (
@@ -598,6 +604,7 @@ interface CronJob {
 }
 
 function SchedulePanel({ derived }: { derived: DerivedState | null }) {
+  const { t } = useTranslation();
   // Live-tick `now` so countdowns refresh every second when at least one
   // wakeup is pending. Cheap and isolated to this panel.
   const [now, setNow] = useState(() => Date.now());
@@ -647,7 +654,7 @@ function SchedulePanel({ derived }: { derived: DerivedState | null }) {
     firedWakeups.length === 0 &&
     crons.length === 0
   ) {
-    return <Empty>Nothing scheduled — no wakeups, no cron jobs.</Empty>;
+    return <Empty>{t('rightSidebar.schedule.empty')}</Empty>;
   }
 
   return (
@@ -655,7 +662,7 @@ function SchedulePanel({ derived }: { derived: DerivedState | null }) {
       {upcomingWakeups.length > 0 && (
         <div>
           <SubHeader
-            label={`Pending wakeups (${upcomingWakeups.length})`}
+            label={t('rightSidebar.schedule.pendingWakeups', { count: upcomingWakeups.length })}
             color="text-rose-400"
             icon={<AlarmClock size={11} />}
           />
@@ -669,7 +676,7 @@ function SchedulePanel({ derived }: { derived: DerivedState | null }) {
       {activeCrons.length > 0 && (
         <div>
           <SubHeader
-            label={`Active crons (${activeCrons.length})`}
+            label={t('rightSidebar.schedule.activeCrons', { count: activeCrons.length })}
             color="text-violet-400"
             icon={<CalendarClock size={11} />}
           />
@@ -682,7 +689,7 @@ function SchedulePanel({ derived }: { derived: DerivedState | null }) {
       )}
       {firedWakeups.length > 0 && (
         <div>
-          <SubHeader label="Wakeup history" color="text-zinc-500" />
+          <SubHeader label={t('rightSidebar.schedule.wakeupHistory')} color="text-zinc-500" />
           <ul className="space-y-1">
             {firedWakeups.slice(0, 6).map((w) => (
               <WakeupRow key={w.toolUseId} wakeup={w} now={now} />
@@ -692,7 +699,7 @@ function SchedulePanel({ derived }: { derived: DerivedState | null }) {
       )}
       {deletedCrons.length > 0 && (
         <div>
-          <SubHeader label="Removed crons" color="text-zinc-500" />
+          <SubHeader label={t('rightSidebar.schedule.removedCrons')} color="text-zinc-500" />
           <ul className="space-y-1">
             {deletedCrons.slice(0, 6).map((c) => (
               <CronRow key={c.toolUseId} cron={c} />
@@ -748,6 +755,7 @@ function CronRow({ cron }: { cron: CronJob }) {
 }
 
 function WakeupRow({ wakeup, now }: { wakeup: Wakeup; now: number }) {
+  const { t } = useTranslation();
   const remainingMs = wakeup.fireAt - now;
   const settled = wakeup.status !== 'pending' || remainingMs <= 0;
   const fireDate = new Date(wakeup.fireAt);
@@ -755,8 +763,8 @@ function WakeupRow({ wakeup, now }: { wakeup: Wakeup; now: number }) {
   const mm = String(fireDate.getMinutes()).padStart(2, '0');
   const ss = String(fireDate.getSeconds()).padStart(2, '0');
   let label: string;
-  if (wakeup.status === 'cancelled') label = 'cancelled';
-  else if (wakeup.status === 'fired' || remainingMs <= 0) label = 'fired';
+  if (wakeup.status === 'cancelled') label = t('rightSidebar.schedule.cancelled');
+  else if (wakeup.status === 'fired' || remainingMs <= 0) label = t('rightSidebar.schedule.fired');
   else label = formatCountdown(remainingMs);
   return (
     <li className="flex items-start gap-1.5">
@@ -816,19 +824,20 @@ function FilesTouchedPanel({
   sessionId: string;
   derived: DerivedState | null;
 }) {
+  const { t } = useTranslation();
   const [previewPath, setPreviewPath] = useState<string | null>(null);
   if (!derived) return <Empty>loading…</Empty>;
   const data = derived.files;
-  if (!data) return <Empty>No files touched yet.</Empty>;
+  if (!data) return <Empty>{t('rightSidebar.filesTouched.empty')}</Empty>;
   const { created, modified, read } = data;
   if (created.length === 0 && modified.length === 0 && read.length === 0) {
-    return <Empty>No files touched yet.</Empty>;
+    return <Empty>{t('rightSidebar.filesTouched.empty')}</Empty>;
   }
   return (
     <>
       <div className="grid grid-cols-3 gap-2 p-2">
         <FileColumn
-          label="Created"
+          label={t('rightSidebar.filesTouched.created')}
           count={created.length}
           color="text-purple-300"
           icon={<PlusCircle size={11} />}
@@ -836,7 +845,7 @@ function FilesTouchedPanel({
           onPreview={setPreviewPath}
         />
         <FileColumn
-          label="Modified"
+          label={t('rightSidebar.filesTouched.modified')}
           count={modified.length}
           color="text-orange-300"
           icon={<Pencil size={11} />}
@@ -844,7 +853,7 @@ function FilesTouchedPanel({
           onPreview={setPreviewPath}
         />
         <FileColumn
-          label="Read"
+          label={t('rightSidebar.filesTouched.read')}
           count={read.length}
           color="text-cyan-300"
           icon={<FileText size={11} />}
@@ -907,6 +916,7 @@ function FileColumnRow({
   file: { path: string; ts: number };
   onPreview: (path: string) => void;
 }) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -932,7 +942,7 @@ function FileColumnRow({
       <button
         onClick={handleCopy}
         className="shrink-0 p-0.5 rounded text-zinc-500 hover:text-zinc-100 hover:bg-bg-elevated opacity-0 group-hover:opacity-100 transition-opacity"
-        title={copied ? 'copied!' : 'copy path'}
+        title={t('rightSidebar.filesTouched.copyPath')}
       >
         {copied ? <Check size={10} className="text-emerald-400" /> : <Copy size={10} />}
       </button>
@@ -948,6 +958,7 @@ function basename(p: string): string {
 /* ───────────────── Phases panel ───────────────── */
 
 function PhasesPanel({ sessionId }: { sessionId: string }) {
+  const { t } = useTranslation();
   // Single source of truth: the structured tracker
   // (`<cwd>/.selfclaude/phases.json`). Markdown phase docs are still
   // useful as the prose brief but they're no longer parsed here — the
@@ -981,17 +992,11 @@ function PhasesPanel({ sessionId }: { sessionId: string }) {
     return (
       <div className="p-3 text-[11px] text-zinc-500 italic leading-relaxed space-y-2">
         <p className="font-mono not-italic text-zinc-400">
-          <code className="text-amber-400">.selfclaude/phases.json</code>{' '}
+          <code className="text-amber-400">{t('rightSidebar.phases.empty.heading')}</code>{' '}
           not set
         </p>
         <p>
-          The supervisor populates the phase tracker during Documentation
-          by calling <code>register_phase_items</code> for each phase
-          (matching <code>docs/phases/*.md</code> briefs). Once that
-          fires, items appear here with live status —{' '}
-          <span className="text-zinc-400">⚪ pending</span> ·{' '}
-          <span className="text-amber-400">🟡 proposed</span> ·{' '}
-          <span className="text-emerald-400">✅ done</span>.
+          {t('rightSidebar.phases.empty.body')}
         </p>
       </div>
     );
@@ -1025,6 +1030,7 @@ function TrackerPhaseCard({
   phase: PhaseTrackerPhase;
   sessionId: string;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(true);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [previewing, setPreviewing] = useState(false);
@@ -1072,7 +1078,7 @@ function TrackerPhaseCard({
         {unverified > 0 && (
           <span
             className="inline-flex items-center gap-0.5 text-[9px] tabular-nums font-mono text-red-300 px-1.5 py-0.5 rounded-full bg-red-950/40 border border-red-700/40"
-            title={`${unverified} done item(s) confirmed without verification — needs operator review`}
+            title={t('rightSidebar.phases.unverified.title', { unverified })}
           >
             <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
             {unverified}
@@ -1081,7 +1087,7 @@ function TrackerPhaseCard({
         {proposed > 0 && (
           <span
             className="text-[9px] tabular-nums font-mono text-amber-300 shrink-0"
-            title={`${proposed} item awaiting supervisor review`}
+            title={t('rightSidebar.phases.proposed.title', { proposed })}
           >
             🟡 {proposed}
           </span>
@@ -1093,7 +1099,7 @@ function TrackerPhaseCard({
           type="button"
           onClick={() => setPreviewing(true)}
           className="text-[10px] text-zinc-600 hover:text-zinc-300 px-1"
-          title="View phase doc"
+          title={t('rightSidebar.phases.viewPhaseDoc')}
         >
           ?
         </button>
@@ -1102,7 +1108,7 @@ function TrackerPhaseCard({
         <ul className="space-y-px ml-2">
           {phase.items.length === 0 ? (
             <li className="text-[11px] text-zinc-600 italic px-1.5 py-1">
-              No items declared yet.
+              {t('rightSidebar.phases.noItems')}
             </li>
           ) : (
             phase.items.map((it) => (
@@ -1147,6 +1153,7 @@ function TrackerItemRow({
   item: PhaseItem;
   onClick: () => void;
 }) {
+  const { t } = useTranslation();
   const emptyConfirm =
     item.status === 'done' &&
     item.confirmEvidence !== null &&
@@ -1179,13 +1186,13 @@ function TrackerItemRow({
         {emptyConfirm && (
           <span
             className="shrink-0 w-2 h-2 rounded-full bg-red-400 ring-2 ring-red-400/30 animate-pulse"
-            title="Confirmed without verification evidence — click to inspect or operator-verify"
+            title={t('rightSidebar.audit.confirmedWithoutEvidence')}
           />
         )}
         {item.operatorVerifiedAt && (
           <span
             className="shrink-0 text-[9px] uppercase font-mono tracking-wide text-cyan-400"
-            title={`Operator-verified at ${new Date(item.operatorVerifiedAt).toLocaleString()}`}
+            title={t('rightSidebar.phases.opVerifiedAt', { datetime: new Date(item.operatorVerifiedAt).toLocaleString() })}
           >
             op✓
           </span>
@@ -1211,13 +1218,12 @@ function TrackerItemRow({
  * operator's signal a confirmation went through without verification.
  */
 function EvidenceTrail({ evidence }: { evidence: ConfirmEvidence }) {
+  const { t } = useTranslation();
   if (evidence.totalCount === 0) {
     return (
       <div className="rounded border border-red-700/50 bg-red-950/30 px-2 py-1.5">
         <p className="text-[10px] font-mono text-red-300 leading-relaxed">
-          ⚠ <strong>Empty audit trail.</strong> No Read / Bash / Edit
-          recorded between propose and confirm. The supervisor may have
-          rubber-stamped this item — push back if it matters.
+          {t('rightSidebar.phases.emptyAuditTrail')}
         </p>
       </div>
     );
@@ -1225,12 +1231,12 @@ function EvidenceTrail({ evidence }: { evidence: ConfirmEvidence }) {
   return (
     <div className="rounded border border-emerald-800/30 bg-emerald-950/15 px-2 py-1.5 space-y-1">
       <div className="text-[9px] uppercase tracking-widest font-mono font-semibold text-emerald-300">
-        verified via ({evidence.totalCount} call{evidence.totalCount === 1 ? '' : 's'})
+        {t('rightSidebar.phases.evidence.verified', { count: evidence.totalCount })}
       </div>
       {evidence.reads.length > 0 && (
         <div>
           <div className="text-[9px] font-mono text-cyan-300 uppercase tracking-wide">
-            read ({evidence.reads.length})
+            {t('rightSidebar.phases.evidence.read', { count: evidence.reads.length })}
           </div>
           <ul className="space-y-px">
             {evidence.reads.map((r, i) => (
@@ -1248,7 +1254,7 @@ function EvidenceTrail({ evidence }: { evidence: ConfirmEvidence }) {
       {evidence.bashes.length > 0 && (
         <div>
           <div className="text-[9px] font-mono text-amber-300 uppercase tracking-wide">
-            bash ({evidence.bashes.length})
+            {t('rightSidebar.phases.evidence.bash', { count: evidence.bashes.length })}
           </div>
           <ul className="space-y-px">
             {evidence.bashes.map((b, i) => (
@@ -1270,7 +1276,7 @@ function EvidenceTrail({ evidence }: { evidence: ConfirmEvidence }) {
       {evidence.edits.length > 0 && (
         <div>
           <div className="text-[9px] font-mono text-orange-300 uppercase tracking-wide">
-            edit ({evidence.edits.length})
+            {t('rightSidebar.phases.evidence.edit', { count: evidence.edits.length })}
           </div>
           <ul className="space-y-px">
             {evidence.edits.map((e, i) => (
@@ -1317,6 +1323,7 @@ function PhaseItemDetailModal({
   item: PhaseItem;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const [verifyState, setVerifyState] = useState<'idle' | 'pending' | 'error'>('idle');
   const [verifyNotes, setVerifyNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -1371,7 +1378,7 @@ function PhaseItemDetailModal({
             type="button"
             onClick={onClose}
             className="absolute top-4 right-4 text-zinc-500 hover:text-zinc-100 w-7 h-7 flex items-center justify-center rounded hover:bg-bg-elevated"
-            aria-label="Close"
+            aria-label={t('common.close')}
           >
             ✕
           </button>
@@ -1389,13 +1396,13 @@ function PhaseItemDetailModal({
         {/* Metadata — vertical stack with label/value alignment so the eye can scan */}
         <div className="px-6 py-3 border-b border-border bg-bg-subtle/30">
           <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1.5 text-[11px] font-mono">
-            <dt className="text-zinc-500 uppercase tracking-wide">Status</dt>
+            <dt className="text-zinc-500 uppercase tracking-wide">{t('rightSidebar.phases.section.status')}</dt>
             <dd>
               <StatusBadge status={item.status} />
             </dd>
             {item.proposedBy && (
               <>
-                <dt className="text-zinc-500 uppercase tracking-wide">Proposed</dt>
+                <dt className="text-zinc-500 uppercase tracking-wide">{t('rightSidebar.phases.section.proposed')}</dt>
                 <dd className="text-zinc-300">
                   <span className="text-amber-300">{item.proposedBy}</span>
                   {item.proposedAt && (
@@ -1406,7 +1413,7 @@ function PhaseItemDetailModal({
             )}
             {item.confirmedBy && (
               <>
-                <dt className="text-zinc-500 uppercase tracking-wide">Confirmed</dt>
+                <dt className="text-zinc-500 uppercase tracking-wide">{t('rightSidebar.phases.section.confirmed')}</dt>
                 <dd className="text-zinc-300">
                   <span className="text-emerald-300">{item.confirmedBy}</span>
                   {item.confirmedAt && (
@@ -1417,7 +1424,7 @@ function PhaseItemDetailModal({
             )}
             {item.operatorVerifiedAt && (
               <>
-                <dt className="text-zinc-500 uppercase tracking-wide">Op-verified</dt>
+                <dt className="text-zinc-500 uppercase tracking-wide">{t('rightSidebar.phases.section.opVerified')}</dt>
                 <dd className="text-cyan-300">
                   {item.operatorVerifiedBy ?? 'operator'}
                   <span className="text-zinc-500"> · {timeAgo(item.operatorVerifiedAt)}</span>
@@ -1434,38 +1441,28 @@ function PhaseItemDetailModal({
               <div className="px-4 py-3 border-b border-red-700/30 bg-red-950/30 flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse shrink-0" />
                 <h3 className="text-[12px] font-mono font-semibold text-red-100 leading-tight">
-                  Confirmed without verification evidence
+                  {t('rightSidebar.phases.emptyConfirm.heading')}
                 </h3>
               </div>
               <div className="px-4 py-4 space-y-4">
                 <p className="text-[12px] leading-relaxed text-red-100/85">
-                  Supervisor confirmed this item without making any{' '}
-                  <code className="px-1 rounded bg-red-950/60 text-red-200">Read</code>,{' '}
-                  <code className="px-1 rounded bg-red-950/60 text-red-200">Bash</code>, or{' '}
-                  <code className="px-1 rounded bg-red-950/60 text-red-200">Edit</code>{' '}
-                  call between proposal and confirmation. To clear this warning:
+                  {t('rightSidebar.phases.emptyConfirm.body')}
                 </p>
                 <div className="grid gap-2 text-[12px] leading-relaxed text-red-100/85">
                   <div className="flex gap-2.5 items-start">
                     <span className="shrink-0 mt-0.5 text-zinc-500">→</span>
-                    <p>
-                      <strong className="text-red-100">Ask sup to re-review</strong> in
-                      chat — the next confirm captures a fresh trail.
-                    </p>
+                    <p>{t('rightSidebar.phases.emptyConfirm.askSup')}</p>
                   </div>
                   <div className="flex gap-2.5 items-start">
                     <span className="shrink-0 mt-0.5 text-zinc-500">→</span>
-                    <p>
-                      <strong className="text-red-100">Mark operator-verified</strong> if
-                      you've inspected the work yourself.
-                    </p>
+                    <p>{t('rightSidebar.phases.emptyConfirm.markVerified')}</p>
                   </div>
                 </div>
                 <div className="space-y-2 pt-2 border-t border-red-700/30">
                   <textarea
                     value={verifyNotes}
                     onChange={(e) => setVerifyNotes(e.target.value)}
-                    placeholder="How you verified (optional)"
+                    placeholder={t('rightSidebar.phases.verifyPlaceholder')}
                     rows={2}
                     className="w-full text-[12px] font-mono bg-bg-subtle border border-border rounded-md px-3 py-2 text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-red-500"
                   />
@@ -1484,7 +1481,7 @@ function PhaseItemDetailModal({
                           : 'border-red-600 bg-red-900/50 text-red-100 hover:bg-red-800/60',
                       )}
                     >
-                      {verifyState === 'pending' ? 'verifying…' : 'Mark as operator-verified'}
+                      {verifyState === 'pending' ? t('rightSidebar.phases.verifying') : t('rightSidebar.phases.markVerified')}
                     </button>
                   </div>
                 </div>
@@ -1496,7 +1493,7 @@ function PhaseItemDetailModal({
           {item.confirmEvidence !== null && item.confirmEvidence.totalCount > 0 && (
             <section className="space-y-2">
               <h3 className="text-[10px] uppercase tracking-widest font-mono text-zinc-500">
-                Verification trail
+                {t('rightSidebar.phases.section.verificationTrail')}
               </h3>
               <EvidenceTrail evidence={item.confirmEvidence} />
             </section>
@@ -1506,7 +1503,7 @@ function PhaseItemDetailModal({
           {trail.length > 0 && (
             <section className="space-y-2">
               <h3 className="text-[10px] uppercase tracking-widest font-mono text-zinc-500">
-                Activity ({trail.length})
+                {t('rightSidebar.phases.section.activity', { count: trail.length })}
               </h3>
               <ul className="space-y-2">
                 {trail.map((e, i) => (
@@ -1519,7 +1516,7 @@ function PhaseItemDetailModal({
           {item.status === 'pending' && trail.length === 0 && (
             <div className="text-center py-8">
               <p className="text-[12px] font-mono text-zinc-500 italic">
-                Pending — no proposer activity yet
+                {t('rightSidebar.phases.pendingNoActivity')}
               </p>
             </div>
           )}
@@ -1614,23 +1611,24 @@ function parseNotesTrail(
 }
 
 function StatusBadge({ status }: { status: PhaseItemStatus }) {
+  const { t } = useTranslation();
   if (status === 'done') {
     return (
       <span className="text-[10px] font-mono uppercase tracking-wide px-2 py-0.5 rounded bg-emerald-950/40 text-emerald-300 border border-emerald-700/40">
-        done
+        {t('rightSidebar.phases.status.done')}
       </span>
     );
   }
   if (status === 'proposed') {
     return (
       <span className="text-[10px] font-mono uppercase tracking-wide px-2 py-0.5 rounded bg-amber-950/40 text-amber-300 border border-amber-700/40">
-        proposed
+        {t('rightSidebar.phases.status.proposed')}
       </span>
     );
   }
   return (
     <span className="text-[10px] font-mono uppercase tracking-wide px-2 py-0.5 rounded bg-zinc-900/50 text-zinc-400 border border-zinc-700/40">
-      pending
+      {t('rightSidebar.phases.status.pending')}
     </span>
   );
 }
@@ -1681,6 +1679,7 @@ function isAuditEntry(e: ChatLogEntry): e is AuditEntry {
 }
 
 function AuditPanel({ chatLog }: { chatLog: ChatLogEntry[] }) {
+  const { t } = useTranslation();
   const entries = useMemo(() => {
     const out = chatLog.filter(isAuditEntry);
     return out.slice().sort((a, b) => b.ts - a.ts);
@@ -1690,12 +1689,9 @@ function AuditPanel({ chatLog }: { chatLog: ChatLogEntry[] }) {
   if (entries.length === 0) {
     return (
       <div className="p-3 text-[11px] text-zinc-500 italic leading-relaxed space-y-2">
-        <p className="font-mono not-italic text-zinc-400">audit log empty</p>
+        <p className="font-mono not-italic text-zinc-400">{t('rightSidebar.audit.empty.heading')}</p>
         <p>
-          Every phase tracker mutation lands here:{' '}
-          <code>register_phase_items</code> · <code>propose_item_done</code>{' '}
-          · <code>confirm_item_done</code> · <code>reject_item_done</code>.
-          Drive-by confirms with empty evidence trails get flagged ⚠.
+          {t('rightSidebar.audit.empty.body')}
         </p>
       </div>
     );
@@ -1731,7 +1727,7 @@ interface AuditMeta {
 function deriveAuditMeta(entry: AuditEntry): AuditMeta {
   if (entry.type === 'phase-registered') {
     return {
-      verb: 'registered',
+      verb: getTranslation('rightSidebar.audit.verb.registered'),
       color: 'text-cyan-300',
       bg: 'bg-cyan-500/40',
       icon: <ListTodo size={11} className="text-cyan-400" />,
@@ -1739,7 +1735,7 @@ function deriveAuditMeta(entry: AuditEntry): AuditMeta {
   }
   if (entry.type === 'phase-item-proposed') {
     return {
-      verb: 'proposed',
+      verb: getTranslation('rightSidebar.audit.verb.proposed'),
       color: 'text-amber-300',
       bg: 'bg-amber-500/40',
       icon: <CircleDot size={11} className="text-amber-400" />,
@@ -1748,7 +1744,7 @@ function deriveAuditMeta(entry: AuditEntry): AuditMeta {
   if (entry.type === 'phase-item-confirmed') {
     const empty = (entry.evidence?.totalCount ?? 0) === 0;
     return {
-      verb: 'confirmed',
+      verb: getTranslation('rightSidebar.audit.verb.confirmed'),
       color: empty ? 'text-red-300' : 'text-emerald-300',
       bg: empty ? 'bg-red-500/40' : 'bg-emerald-500/40',
       icon: (
@@ -1762,7 +1758,7 @@ function deriveAuditMeta(entry: AuditEntry): AuditMeta {
   }
   if (entry.type === 'phase-item-rejected') {
     return {
-      verb: 'rejected',
+      verb: getTranslation('rightSidebar.audit.verb.rejected'),
       color: 'text-rose-300',
       bg: 'bg-rose-500/40',
       icon: <CircleDashed size={11} className="text-rose-400" />,
@@ -1770,7 +1766,7 @@ function deriveAuditMeta(entry: AuditEntry): AuditMeta {
   }
   // operator-verified
   return {
-    verb: 'op-verified',
+    verb: getTranslation('rightSidebar.audit.verb.opVerified'),
     color: 'text-cyan-300',
     bg: 'bg-cyan-500/40',
     icon: <CircleCheck size={11} className="text-cyan-400" />,
@@ -1802,6 +1798,7 @@ function AuditRowCompact({
   entry: AuditEntry;
   onClick: () => void;
 }) {
+  const { t } = useTranslation();
   const meta = deriveAuditMeta(entry);
   const time = formatHm(entry.ts);
   return (
@@ -1829,7 +1826,7 @@ function AuditRowCompact({
         {meta.warn && (
           <span
             className="shrink-0 w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse"
-            title="Confirmed without verification evidence"
+            title={t('rightSidebar.audit.confirmedWithoutEvidence')}
           />
         )}
         <span className="shrink-0 text-[9px] font-mono text-zinc-600 truncate max-w-[120px]">
@@ -1852,6 +1849,7 @@ function AuditEntryDetailModal({
   entry: AuditEntry;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -1877,7 +1875,7 @@ function AuditEntryDetailModal({
             type="button"
             onClick={onClose}
             className="absolute top-3 right-3 text-zinc-500 hover:text-zinc-100 w-7 h-7 flex items-center justify-center rounded hover:bg-bg-elevated"
-            aria-label="Close"
+            aria-label={t('common.close')}
           >
             ✕
           </button>
@@ -1893,7 +1891,7 @@ function AuditEntryDetailModal({
             </span>
             {meta.warn && (
               <span className="text-[10px] font-mono text-red-300">
-                ⚠ empty trail
+                {t('rightSidebar.audit.emptyTrail')}
               </span>
             )}
             <span className="ml-auto text-[10px] font-mono text-zinc-500 tabular-nums">
@@ -1912,57 +1910,42 @@ function AuditEntryDetailModal({
           {/* Actor-line per verb — gives the "who" at a glance. */}
           {entry.type === 'phase-registered' && (
             <p className="text-[12px] font-mono text-zinc-300">
-              Supervisor declared{' '}
-              <strong className="text-cyan-300">{entry.itemCount}</strong> item(s) for{' '}
-              <strong>{entry.title}</strong>
+              {t('rightSidebar.audit.detail.declared', { count: entry.itemCount, title: entry.title })}
               {entry.isReregistration && (
-                <span className="text-zinc-500"> (re-registration — prior progress preserved)</span>
+                <span className="text-zinc-500"> {t('rightSidebar.audit.detail.reRegistration')}</span>
               )}
-              .
             </p>
           )}
           {entry.type === 'phase-item-proposed' && (
             <p className="text-[12px] font-mono text-zinc-300">
-              Proposed by <strong className="text-amber-300">{entry.agent}</strong>.
+              {t('rightSidebar.audit.detail.proposedBy', { agent: entry.agent })}
             </p>
           )}
           {entry.type === 'phase-item-confirmed' && (
             <p className="text-[12px] font-mono text-zinc-300">
-              Confirmed by{' '}
-              <strong className={meta.warn ? 'text-red-300' : 'text-emerald-300'}>
-                {entry.confirmer}
-              </strong>
+              {t('rightSidebar.audit.detail.confirmedBy', { confirmer: entry.confirmer })}
               {entry.proposer && (
-                <>
-                  {' '}— originally proposed by{' '}
-                  <strong className="text-amber-300">{entry.proposer}</strong>
-                </>
+                <> {t('rightSidebar.audit.detail.originallyProposed', { proposer: entry.proposer })}</>
               )}
-              .
             </p>
           )}
           {entry.type === 'phase-item-rejected' && (
             <p className="text-[12px] font-mono text-zinc-300">
-              Rejected by <strong className="text-rose-300">{entry.rejector}</strong>
+              {t('rightSidebar.audit.detail.rejectedBy', { rejector: entry.rejector })}
               {entry.proposer && (
-                <>
-                  {' '}— originally proposed by{' '}
-                  <strong className="text-amber-300">{entry.proposer}</strong>
-                </>
+                <> {t('rightSidebar.audit.detail.originallyProposed', { proposer: entry.proposer })}</>
               )}
-              .
             </p>
           )}
           {entry.type === 'phase-item-operator-verified' && (
             <p className="text-[12px] font-mono text-zinc-300">
-              Operator-verified by <strong className="text-cyan-300">{entry.operator}</strong>{' '}
-              — manual override clearing the empty-evidence ⚠.
+              {t('rightSidebar.audit.detail.opVerifiedBy', { operator: entry.operator })}
             </p>
           )}
 
           {/* Verb-specific bodies */}
           {entry.type === 'phase-item-proposed' && entry.notes.trim().length > 0 && (
-            <Section title="Proposer notes">
+            <Section title={t('rightSidebar.phases.section.proposerNotes')}>
               <pre className="text-[12px] leading-relaxed font-mono text-zinc-200 whitespace-pre-wrap break-words bg-bg-subtle/50 rounded border border-border/40 px-3 py-2">
                 {entry.notes}
               </pre>
@@ -1971,22 +1954,19 @@ function AuditEntryDetailModal({
           {entry.type === 'phase-item-confirmed' && (
             <>
               {entry.evidence && entry.evidence.totalCount > 0 && (
-                <Section title="Verification trail">
+                <Section title={t('rightSidebar.phases.section.verificationTrail')}>
                   <EvidenceTrail evidence={entry.evidence} />
                 </Section>
               )}
               {meta.warn && (
                 <div className="rounded border border-red-700/50 bg-red-950/20 px-3 py-2.5">
                   <p className="text-[12px] leading-relaxed text-red-200">
-                    Supervisor confirmed without recording any{' '}
-                    <code>Read</code> / <code>Bash</code> / <code>Edit</code> tool call
-                    between proposal and confirmation. Open the phases panel to
-                    operator-verify or request re-review.
+                    {t('rightSidebar.audit.detail.rubberStamp')}
                   </p>
                 </div>
               )}
               {entry.notes.trim().length > 0 && (
-                <Section title="Confirmer notes">
+                <Section title={t('rightSidebar.phases.section.confirmerNotes')}>
                   <pre className="text-[12px] leading-relaxed font-mono text-zinc-200 whitespace-pre-wrap break-words bg-bg-subtle/50 rounded border border-border/40 px-3 py-2">
                     {entry.notes}
                   </pre>
@@ -1995,14 +1975,14 @@ function AuditEntryDetailModal({
             </>
           )}
           {entry.type === 'phase-item-rejected' && (
-            <Section title="Rejection reason">
+            <Section title={t('rightSidebar.phases.section.rejectionReason')}>
               <pre className="text-[12px] leading-relaxed font-mono text-rose-100 whitespace-pre-wrap break-words bg-rose-950/20 border border-rose-700/40 rounded px-3 py-2">
                 {entry.reason}
               </pre>
             </Section>
           )}
           {entry.type === 'phase-item-operator-verified' && entry.notes.trim().length > 0 && (
-            <Section title="Operator notes">
+            <Section title={t('rightSidebar.phases.section.operatorNotes')}>
               <pre className="text-[12px] leading-relaxed font-mono text-zinc-200 whitespace-pre-wrap break-words bg-bg-subtle/50 rounded border border-border/40 px-3 py-2">
                 {entry.notes}
               </pre>
@@ -2039,6 +2019,7 @@ function MemoryPanel({
   /** Same — modal opens in edit mode. */
   onEdit: (path: string) => void;
 }) {
+  const { t } = useTranslation();
   const [data, setData] = useState<{
     project: MemoryOverviewEntry[];
     shared: MemoryOverviewEntry[];
@@ -2102,35 +2083,35 @@ function MemoryPanel({
   return (
     <div className="p-3 space-y-4">
       <MemorySection
-        title="Project rules"
+        title={t('rightSidebar.memory.section.projectRules')}
         kind="project"
-        hint={`<cwd>/CLAUDE.md, AGENTS.md`}
+        hint={t('rightSidebar.memory.section.projectRules.hint')}
         entries={data.project}
-        emptyText="No CLAUDE.md / AGENTS.md yet. The supervisor writes these during bootstrap; you can also create them manually."
+        emptyText={t('rightSidebar.memory.section.projectRules.empty')}
         onClick={handleClick}
       />
       <MemorySection
-        title="Shared memory"
+        title={t('rightSidebar.memory.section.sharedMemory')}
         kind="shared"
-        hint={`<cwd>/.selfclaude/memory/*.md`}
+        hint={t('rightSidebar.memory.section.sharedMemory.hint')}
         entries={data.shared}
-        emptyText="No shared memory yet. Sup writes here for cross-agent durable notes."
+        emptyText={t('rightSidebar.memory.section.sharedMemory.empty')}
         onClick={handleClick}
       />
       <MemorySection
-        title="CC auto-memory"
+        title={t('rightSidebar.memory.section.ccAutoMemory')}
         kind="auto"
         hint={`~/.claude/projects/${data.encodedCwd}/memory/*.md`}
         entries={data.auto}
-        emptyText="No CC auto-memory files for this project yet. Sup writes here when the operator says 'add to memory'."
+        emptyText={t('rightSidebar.memory.section.ccAutoMemory.empty')}
         onClick={handleClick}
       />
       <MemorySection
-        title="User-global"
+        title={t('rightSidebar.memory.section.userGlobal')}
         kind="user-global"
-        hint="~/.claude/CLAUDE.md (read-only)"
+        hint={t('rightSidebar.memory.section.userGlobal.hint')}
         entries={data.userGlobal}
-        emptyText="No user-global CLAUDE.md."
+        emptyText={t('rightSidebar.memory.section.userGlobal.empty')}
         onClick={handleClick}
       />
 
@@ -2204,6 +2185,7 @@ function MemorySection({
   emptyText: string;
   onClick: (entry: MemoryOverviewEntry) => void;
 }) {
+  const { t } = useTranslation();
   const theme = SECTION_THEME[kind];
   return (
     <section className={cn('rounded-lg border overflow-hidden', theme.container)}>
@@ -2220,7 +2202,7 @@ function MemorySection({
         <span
           className="shrink-0 text-zinc-600 cursor-help"
           title={hint}
-          aria-label={`path: ${hint}`}
+          aria-label={t('rightSidebar.memory.pathLabel', { hint })}
         >
           <Info size={11} />
         </span>
@@ -2254,6 +2236,7 @@ function MemoryRow({
   entry: MemoryOverviewEntry;
   onClick: () => void;
 }) {
+  const { t } = useTranslation();
   // Compact default — title row only (1 line). Click row toggles an
   // inline preview block; the dedicated open-icon (right side) goes
   // straight to the full viewer / editor modal. Two distinct
@@ -2272,7 +2255,7 @@ function MemoryRow({
             'group flex-1 flex items-center gap-2 px-2.5 py-1.5 text-left min-w-0',
             hasPreview && 'hover:bg-bg-elevated/60',
           )}
-          title={hasPreview ? (open ? 'collapse preview' : 'show preview') : 'empty file'}
+          title={hasPreview ? (open ? t('rightSidebar.memory.collapsePreview') : t('rightSidebar.memory.showPreview')) : t('rightSidebar.memory.emptyFile')}
         >
           {hasPreview ? (
             open ? (
@@ -2291,7 +2274,7 @@ function MemoryRow({
           </span>
           {!entry.editable && (
             <span className="shrink-0 text-[9px] font-mono uppercase tracking-wide text-zinc-600">
-              ro
+              {t('rightSidebar.memory.readOnly')}
             </span>
           )}
         </button>
@@ -2299,7 +2282,7 @@ function MemoryRow({
           type="button"
           onClick={onClick}
           className="shrink-0 px-2.5 text-zinc-500 hover:text-zinc-100 hover:bg-bg-elevated/60 border-l border-border/40"
-          title={entry.editable ? 'open editor' : 'open viewer'}
+          title={entry.editable ? t('rightSidebar.memory.openEditor') : t('rightSidebar.memory.openViewer')}
         >
           <ExternalLink size={11} />
         </button>
@@ -2314,7 +2297,7 @@ function MemoryRow({
             onClick={onClick}
             className="mt-1.5 text-[10px] underline text-zinc-500 hover:text-zinc-200"
           >
-            {entry.editable ? 'open & edit →' : 'open viewer →'}
+            {entry.editable ? t('rightSidebar.memory.openEditorLink') : t('rightSidebar.memory.openViewerLink')}
           </button>
         </div>
       )}
@@ -2342,6 +2325,7 @@ function AutoMemoryFileModal({
   name: string;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const [content, setContent] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [size, setSize] = useState(0);
@@ -2426,7 +2410,7 @@ function AutoMemoryFileModal({
               type="button"
               onClick={() => setEditing(true)}
               className="text-zinc-400 hover:text-zinc-100 p-1.5 rounded hover:bg-zinc-800/60"
-              title="edit"
+              title={t('rightSidebar.memory.openEditor')}
             >
               ✎
             </button>
@@ -2442,16 +2426,16 @@ function AutoMemoryFileModal({
                   ? 'bg-cyan-600 hover:bg-cyan-500 text-white'
                   : 'bg-zinc-800 text-zinc-500 cursor-not-allowed',
               )}
-              title="save (⌘S)"
+              title={t('settings.prompts.saveTitle')}
             >
-              {saving ? 'saving…' : 'save'}
+              {saving ? t('rightSidebar.stack.save.saving') : t('rightSidebar.stack.save.idle')}
             </button>
           )}
           <button
             type="button"
             onClick={onClose}
             className="text-zinc-500 hover:text-zinc-100 w-7 h-7 flex items-center justify-center rounded hover:bg-bg-elevated"
-            aria-label="Close"
+            aria-label={t('common.close')}
           >
             ✕
           </button>
@@ -2471,7 +2455,7 @@ function AutoMemoryFileModal({
             />
           ) : (
             <pre className="p-4 text-[12px] leading-relaxed font-mono text-zinc-200 whitespace-pre-wrap break-words">
-              {content || <span className="italic text-zinc-500">(empty file)</span>}
+              {content || <span className="italic text-zinc-500">{t('rightSidebar.memory.emptyFileIndicator')}</span>}
             </pre>
           )}
         </div>
@@ -2493,6 +2477,7 @@ function UserGlobalViewerModal({
   content: string | null;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -2516,13 +2501,13 @@ function UserGlobalViewerModal({
             {path}
           </code>
           <span className="text-[9px] font-mono uppercase tracking-wide text-zinc-600">
-            read-only
+            {t('rightSidebar.memory.readOnlyBadge')}
           </span>
           <button
             type="button"
             onClick={onClose}
             className="text-zinc-500 hover:text-zinc-100 w-7 h-7 flex items-center justify-center rounded hover:bg-bg-elevated"
-            aria-label="Close"
+            aria-label={t('common.close')}
           >
             ✕
           </button>
@@ -2616,6 +2601,7 @@ function DecisionRoomPanel({
    */
   sessionId?: string;
 }) {
+  const { t } = useTranslation();
   const trail = useMemo(() => buildDecisionTrail(chatLog), [chatLog]);
   const [filter, setFilter] = useState<DecisionFilter>('all');
 
@@ -2643,9 +2629,7 @@ function DecisionRoomPanel({
   if (trail.length === 0) {
     return (
       <div className="p-2 text-[11px] text-zinc-500 italic leading-relaxed">
-        No decisions yet. Verdicts, phase confirmations, approval
-        decisions, and task delegations land here as they happen —
-        every binding moment in the project, chronological.
+        {t('rightSidebar.decisions.empty')}
       </div>
     );
   }
@@ -2656,7 +2640,7 @@ function DecisionRoomPanel({
       <div className="flex-1 overflow-y-auto scrollbar-thin">
         {filtered.length === 0 ? (
           <div className="p-3 text-[11px] text-zinc-500 italic">
-            No entries in this category yet.
+            {t('rightSidebar.decisions.noEntries')}
           </div>
         ) : (
           <div className="p-2 space-y-1.5">
@@ -2687,6 +2671,7 @@ function ExportDecisionsButton({
   chatLog: ChatLogEntry[];
   sessionId: string;
 }) {
+  const { t } = useTranslation();
   const trail = useMemo(() => buildDecisionTrail(chatLog), [chatLog]);
   const [exporting, setExporting] = useState(false);
 
@@ -2731,8 +2716,8 @@ function ExportDecisionsButton({
       )}
       title={
         trail.length === 0
-          ? 'No decisions to export yet'
-          : 'Export the decision trail as a shareable markdown file'
+          ? t('rightSidebar.decisions.export.empty')
+          : t('rightSidebar.decisions.export.title')
       }
     >
       {exporting ? (
@@ -2740,7 +2725,7 @@ function ExportDecisionsButton({
       ) : (
         <Download size={10} />
       )}
-      <span>Export</span>
+      <span>{t('rightSidebar.decisions.export')}</span>
     </button>
   );
 }
@@ -2761,12 +2746,13 @@ function DecisionFilterChips({
    */
   embedded?: boolean;
 }) {
+  const { t } = useTranslation();
   const chips: { key: DecisionFilter; label: string; count: number }[] = [
-    { key: 'all', label: 'All', count: counts.all },
-    { key: 'verdicts', label: 'Verdicts', count: counts.verdicts },
-    { key: 'phase', label: 'Phase', count: counts.phase },
-    { key: 'approvals', label: 'Approvals', count: counts.approvals },
-    { key: 'delegations', label: 'Delegations', count: counts.delegations },
+    { key: 'all', label: t('rightSidebar.decisions.filter.all'), count: counts.all },
+    { key: 'verdicts', label: t('rightSidebar.decisions.filter.verdicts'), count: counts.verdicts },
+    { key: 'phase', label: t('rightSidebar.decisions.filter.phase'), count: counts.phase },
+    { key: 'approvals', label: t('rightSidebar.decisions.filter.approvals'), count: counts.approvals },
+    { key: 'delegations', label: t('rightSidebar.decisions.filter.delegations'), count: counts.delegations },
   ];
   return (
     <div
@@ -2820,6 +2806,7 @@ function formatDecisionTime(ts: number): { time: string; full: string } {
  * that loses information across types.
  */
 function DecisionCard({ entry }: { entry: DecisionEntry }) {
+  const { t } = useTranslation();
   const e = entry.entry;
   const { time, full } = formatDecisionTime(entry.ts);
 
@@ -2829,7 +2816,7 @@ function DecisionCard({ entry }: { entry: DecisionEntry }) {
         <div className="flex items-center gap-1.5 mb-1">
           <Gavel size={12} className="text-red-300 shrink-0" />
           <span className="text-[10px] uppercase tracking-widest font-bold text-red-300">
-            karar
+            {t('rightSidebar.decisions.label.verdict')}
           </span>
           <span className="text-[10px] text-red-400 font-mono tabular-nums">
             #{e.id.toString().padStart(3, '0')}
@@ -2853,7 +2840,7 @@ function DecisionCard({ entry }: { entry: DecisionEntry }) {
       <DecisionRow
         icon={<FileText size={11} className="text-cyan-300" />}
         accent="cyan"
-        label="phase doc"
+        label={t('rightSidebar.decisions.label.phaseDoc')}
         title={
           <span>
             wrote <code className="text-cyan-100">{e.filename}</code>
@@ -2870,7 +2857,7 @@ function DecisionCard({ entry }: { entry: DecisionEntry }) {
       <DecisionRow
         icon={<ListChecks size={11} className="text-cyan-300" />}
         accent="cyan"
-        label={e.isReregistration ? 're-registered' : 'registered'}
+        label={e.isReregistration ? t('rightSidebar.decisions.label.reRegistered') : t('rightSidebar.decisions.label.registered')}
         title={
           <span>
             <code className="text-cyan-100">{e.slug}</code>
@@ -2894,7 +2881,7 @@ function DecisionCard({ entry }: { entry: DecisionEntry }) {
       <DecisionRow
         icon={<CheckCircle2 size={11} className="text-emerald-400" />}
         accent="emerald"
-        label="confirmed"
+        label={t('rightSidebar.decisions.label.confirmed')}
         title={
           <span>
             <code className="text-emerald-100">{e.slug}/{e.itemId}</code>
@@ -2919,7 +2906,7 @@ function DecisionCard({ entry }: { entry: DecisionEntry }) {
       <DecisionRow
         icon={<X size={11} className="text-rose-400" />}
         accent="rose"
-        label="rejected"
+        label={t('rightSidebar.decisions.label.rejected')}
         title={
           <span>
             <code className="text-rose-100">{e.slug}/{e.itemId}</code>
@@ -2939,7 +2926,7 @@ function DecisionCard({ entry }: { entry: DecisionEntry }) {
       <DecisionRow
         icon={<UserCheck size={11} className="text-amber-300" />}
         accent="amber"
-        label="operator verified"
+        label={t('rightSidebar.decisions.label.opVerified')}
         title={
           <span>
             <code className="text-amber-100">{e.slug}/{e.itemId}</code>
@@ -2959,7 +2946,7 @@ function DecisionCard({ entry }: { entry: DecisionEntry }) {
       <DecisionRow
         icon={<ShieldCheck size={11} className="text-amber-300" />}
         accent="amber"
-        label="approval requested"
+        label={t('rightSidebar.decisions.label.approvalRequested')}
         title={<span className="text-zinc-200">{e.action}</span>}
         body={e.reason}
         time={time}
@@ -2980,7 +2967,7 @@ function DecisionCard({ entry }: { entry: DecisionEntry }) {
           )
         }
         accent={allow ? 'emerald' : 'rose'}
-        label={allow ? 'approved' : 'denied'}
+        label={allow ? t('rightSidebar.decisions.label.approved') : t('rightSidebar.decisions.label.denied')}
         title={
           <span className="text-zinc-200 font-mono text-[10px]">
             request id {e.id.slice(0, 8)}
@@ -2997,7 +2984,7 @@ function DecisionCard({ entry }: { entry: DecisionEntry }) {
       <DecisionRow
         icon={<Send size={11} className="text-violet-300" />}
         accent="violet"
-        label="delegated"
+        label={t('rightSidebar.decisions.label.delegated')}
         title={<span className="text-zinc-200">{e.summary}</span>}
         time={time}
         fullTime={full}
@@ -3085,6 +3072,7 @@ function DecisionRow({
  * — useful when several specialists are talking at once.
  */
 function AgentsRoomPanel({ chatLog }: { chatLog: ChatLogEntry[] }) {
+  const { t } = useTranslation();
   const messages = useMemo(
     () =>
       chatLog.filter(
@@ -3127,11 +3115,7 @@ function AgentsRoomPanel({ chatLog }: { chatLog: ChatLogEntry[] }) {
   if (messages.length === 0) {
     return (
       <div className="p-3 text-[11px] text-zinc-500 italic leading-relaxed">
-        No chat yet. Specialists post here via{' '}
-        <code>{'<ROOM>…</ROOM>'}</code> when they need to coordinate
-        with each other. Every message forwards to the supervisor (the
-        moderator); sup-decided outcomes show up in the{' '}
-        <strong>Decision Room</strong> tab as numbered verdicts.
+        {t('rightSidebar.room.empty')}
       </div>
     );
   }
@@ -3142,7 +3126,7 @@ function AgentsRoomPanel({ chatLog }: { chatLog: ChatLogEntry[] }) {
       {agents.length >= 2 && (
         <div className="flex items-center gap-1 flex-wrap pb-1.5 border-b border-border/40 -mx-1 px-1">
           <span className="text-[10px] uppercase tracking-widest font-mono text-zinc-600 mr-1">
-            filter
+            {t('rightSidebar.room.filter')}
           </span>
           <button
             type="button"
@@ -3154,7 +3138,7 @@ function AgentsRoomPanel({ chatLog }: { chatLog: ChatLogEntry[] }) {
                 : 'border-zinc-700/40 text-zinc-400 hover:bg-zinc-800/40',
             )}
           >
-            all ({messages.length})
+            {t('rightSidebar.room.filter.all', { count: messages.length })}
           </button>
           {agents.map((agent) => {
             const accent = AGENT_BUBBLE_THEME[agent] ?? AGENT_BUBBLE_THEME._default!;
@@ -3192,6 +3176,7 @@ function RoomCluster({
   agent: string;
   items: Extract<ChatLogEntry, { type: 'room-message' }>[];
 }) {
+  const { t } = useTranslation();
   const accent = AGENT_BUBBLE_THEME[agent] ?? AGENT_BUBBLE_THEME._default!;
   const first = items[0]!;
   const last = items[items.length - 1]!;
@@ -3218,7 +3203,7 @@ function RoomCluster({
         </span>
         {items.length > 1 && (
           <span className="text-[9px] uppercase tracking-wide font-mono text-zinc-500">
-            {items.length} posts
+            {t('rightSidebar.room.posts', { count: items.length })}
           </span>
         )}
         <span
@@ -3238,6 +3223,7 @@ function RoomCluster({
 }
 
 function RoomMessage({ body }: { body: string }) {
+  const { t } = useTranslation();
   // Detect a leading "<agent-name> — " mention pattern. The agent
   // prompts encourage opening posts with the addressee, e.g.
   //   "ui-dev — proposing we expose /api/foo".
@@ -3255,7 +3241,7 @@ function RoomMessage({ body }: { body: string }) {
             (AGENT_BUBBLE_THEME[mention] ?? AGENT_BUBBLE_THEME._default!).bg,
             (AGENT_BUBBLE_THEME[mention] ?? AGENT_BUBBLE_THEME._default!).label,
           )}
-          title={`addressed to ${mention}`}
+          title={t('rightSidebar.room.mention', { mention })}
         >
           @{mention}
         </span>
@@ -3327,6 +3313,7 @@ const AGENT_BUBBLE_THEME: Record<
 /* ───────────────── Stack manifest ───────────────── */
 
 function StackPanel({ sessionId }: { sessionId: string }) {
+  const { t } = useTranslation();
   const [items, setItems] = useState<StackItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [savingState, setSavingState] = useState<'idle' | 'saving' | 'saved'>(
@@ -3416,7 +3403,7 @@ function StackPanel({ sessionId }: { sessionId: string }) {
     );
   };
   const addCategory = () => {
-    const name = prompt('New category name (lowercase, e.g. "monitoring")');
+    const name = prompt(t('rightSidebar.stack.addCategory'));
     if (!name) return;
     setItems((cur) =>
       cur
@@ -3433,15 +3420,15 @@ function StackPanel({ sessionId }: { sessionId: string }) {
     <div className="p-2 pb-3">
       <div className="flex items-center gap-2 px-2 py-1.5 mb-2 border-b border-border/60">
         <span className="flex-1 text-[10px] uppercase tracking-widest text-zinc-400 font-mono font-semibold">
-          tech manifest
+          {t('rightSidebar.stack.header')}
         </span>
         <button
           type="button"
           onClick={() => setSummaryOpen(true)}
           className="text-[10px] font-mono px-2 py-0.5 rounded border border-border bg-bg-elevated/40 text-zinc-300 hover:bg-bg-elevated/70"
-          title="Plain-language summary of the manifest"
+          title={t('rightSidebar.stack.summary.subtitle')}
         >
-          📋 summary
+          {t('rightSidebar.stack.summaryButton')}
         </button>
         <button
           type="button"
@@ -3454,7 +3441,7 @@ function StackPanel({ sessionId }: { sessionId: string }) {
               : 'border-cyan-800 bg-cyan-900/40 text-cyan-200 hover:bg-cyan-900/60',
           )}
         >
-          {savingState === 'saving' ? 'saving…' : savingState === 'saved' ? '✓ saved' : 'save'}
+          {savingState === 'saving' ? t('rightSidebar.stack.save.saving') : savingState === 'saved' ? t('rightSidebar.stack.save.saved') : t('rightSidebar.stack.save.idle')}
         </button>
       </div>
       <ul className="space-y-1">
@@ -3482,7 +3469,7 @@ function StackPanel({ sessionId }: { sessionId: string }) {
         onClick={addCategory}
         className="w-full mt-2 px-2 py-1 text-[10px] font-mono text-zinc-400 border border-dashed border-border hover:border-zinc-500 hover:text-zinc-200 rounded"
       >
-        + add category
+        {t('rightSidebar.stack.addCategory')}
       </button>
       {summaryOpen && (
         <StackSummaryModal items={items} onClose={() => setSummaryOpen(false)} />
@@ -3511,6 +3498,7 @@ function CategorySection({
   onRemove: (absoluteIdx: number) => void;
   onAdd: () => void;
 }) {
+  const { t } = useTranslation();
   // Build a single-line category summary for the head — what's
   // actually filled in, e.g. "Next.js, shadcn, Tailwind". Lets the
   // operator scan all categories without expanding.
@@ -3543,7 +3531,7 @@ function CategorySection({
         {lockedCount > 0 && (
           <span
             className="shrink-0 text-[9px] font-mono text-amber-400"
-            title={`${lockedCount} locked item(s)`}
+            title={t('rightSidebar.stack.lockedItems', { count: lockedCount })}
           >
             🔒 {lockedCount}
           </span>
@@ -3576,7 +3564,7 @@ function CategorySection({
             onClick={onAdd}
             className="w-full flex items-center justify-center gap-1 px-2 py-0.5 text-[10px] font-mono text-zinc-500 hover:text-zinc-200 rounded"
           >
-            <Plus size={10} /> add
+            <Plus size={10} /> {t('rightSidebar.stack.addItem')}
           </button>
         </div>
       )}
@@ -3597,6 +3585,7 @@ function StackSummaryModal({
   items: StackItem[];
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -3628,9 +3617,9 @@ function StackSummaryModal({
       >
         <header className="flex items-center gap-3 px-5 py-4 border-b border-border-strong">
           <div className="flex-1">
-            <h3 className="text-[14px] font-mono text-zinc-100">Stack summary</h3>
+            <h3 className="text-[14px] font-mono text-zinc-100">{t('rightSidebar.stack.summary.title')}</h3>
             <p className="text-[10px] font-mono text-zinc-500 mt-0.5">
-              Plain-language readout of the tech manifest.
+              {t('rightSidebar.stack.summary.subtitle')}
             </p>
           </div>
           <button
@@ -3642,15 +3631,15 @@ function StackSummaryModal({
                 ? 'border-emerald-700 bg-emerald-950/40 text-emerald-300'
                 : 'border-border bg-bg-elevated/40 text-zinc-300 hover:bg-bg-elevated/70',
             )}
-            title="Copy summary to clipboard"
+            title={t('rightSidebar.stack.summary.copy.title')}
           >
-            {copied ? '✓ copied' : 'copy'}
+            {copied ? t('rightSidebar.stack.summary.copy.copied') : t('rightSidebar.stack.summary.copy.idle')}
           </button>
           <button
             type="button"
             onClick={onClose}
             className="text-zinc-500 hover:text-zinc-100 w-7 h-7 flex items-center justify-center rounded hover:bg-bg-elevated"
-            aria-label="Close"
+            aria-label={t('common.close')}
           >
             ✕
           </button>
@@ -3658,8 +3647,7 @@ function StackSummaryModal({
         <div className="flex-1 overflow-y-auto scrollbar-thin px-5 py-4">
           {items.every((it) => it.value.trim().length === 0) ? (
             <p className="text-[12px] font-mono italic text-zinc-500">
-              No values filled in yet. Open a category and pick the stack
-              choices the project will use.
+              {t('rightSidebar.stack.summary.empty')}
             </p>
           ) : (
             <pre className="text-[12px] leading-relaxed font-mono text-zinc-200 whitespace-pre-wrap break-words">
@@ -3742,6 +3730,7 @@ function StackItemRow({
   onUpdate: (patch: Partial<StackItem>) => void;
   onRemove: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div
       className={cn(
@@ -3754,7 +3743,7 @@ function StackItemRow({
           type="text"
           value={item.name}
           onChange={(e) => onUpdate({ name: e.target.value })}
-          placeholder="dimension"
+          placeholder={t('rightSidebar.stack.dimension.placeholder')}
           className="flex-1 min-w-0 bg-transparent border-b border-border/40 text-[11px] font-mono text-zinc-300 px-1 py-0.5 placeholder-zinc-600 focus:outline-none focus:border-cyan-600"
         />
         <button
@@ -3765,14 +3754,14 @@ function StackItemRow({
               ? 'text-amber-300 hover:text-amber-100'
               : 'text-zinc-500 hover:text-zinc-200',
           )}
-          title={item.locked ? 'unlock — agents may suggest changes' : 'lock — agents must honour'}
+          title={item.locked ? t('rightSidebar.stack.unlock.title') : t('rightSidebar.stack.lock.title')}
         >
           {item.locked ? <Lock size={10} /> : <Unlock size={10} />}
         </button>
         <button
           onClick={onRemove}
           className="p-0.5 rounded text-zinc-500 hover:text-red-400"
-          title="remove"
+          title={t('rightSidebar.stack.remove.title')}
         >
           <Trash2 size={10} />
         </button>
@@ -3782,14 +3771,14 @@ function StackItemRow({
           type="text"
           value={item.value}
           onChange={(e) => onUpdate({ value: e.target.value })}
-          placeholder="value (e.g. Next.js)"
+          placeholder={t('rightSidebar.stack.value.placeholder')}
           className="flex-1 min-w-0 bg-bg-subtle border border-border/40 rounded text-[12px] font-mono text-zinc-100 px-1.5 py-0.5 placeholder-zinc-600 focus:outline-none focus:border-cyan-600"
         />
         <input
           type="text"
           value={item.version}
           onChange={(e) => onUpdate({ version: e.target.value })}
-          placeholder="version"
+          placeholder={t('rightSidebar.stack.version.placeholder')}
           className="w-20 shrink-0 bg-bg-subtle border border-border/40 rounded text-[11px] font-mono text-zinc-300 px-1.5 py-0.5 placeholder-zinc-600 focus:outline-none focus:border-cyan-600"
         />
       </div>
@@ -3797,7 +3786,7 @@ function StackItemRow({
         type="text"
         value={item.notes}
         onChange={(e) => onUpdate({ notes: e.target.value })}
-        placeholder="notes (optional)"
+        placeholder={t('rightSidebar.stack.notes.placeholder')}
         className="w-full bg-transparent text-[10px] font-mono text-zinc-500 italic px-1 py-0.5 placeholder-zinc-700 focus:outline-none focus:text-zinc-300"
       />
     </div>
@@ -3870,6 +3859,7 @@ function Empty({ children }: { children: React.ReactNode }) {
  * Hydrates lazily on tab open + via SSE `scripts-updated` events.
  */
 function ScriptsPanel({ sessionId }: { sessionId: string }) {
+  const { t } = useTranslation();
   const file = useSessionStore((s) => s.sessions[sessionId]?.scripts ?? null);
   const setScripts = useSessionStore((s) => s.setScripts);
   const [error, setError] = useState<string | null>(null);
@@ -3897,14 +3887,9 @@ function ScriptsPanel({ sessionId }: { sessionId: string }) {
   if (file.scripts.length === 0) {
     return (
       <div className="p-3 text-[11px] text-zinc-500 italic leading-relaxed space-y-2">
-        <p className="font-mono not-italic text-zinc-400">no scripts yet</p>
+        <p className="font-mono not-italic text-zinc-400">{t('rightSidebar.scripts.empty')}</p>
         <p>
-          When the supervisor finds itself running the same Bash command
-          repeatedly, it can call <code>propose_script</code> to suggest a
-          reusable shell script. You'll see the proposal here with the
-          body + reason — review and approve to add it to{' '}
-          <code>.selfclaude/scripts/</code>, or reject with a reason. Sup
-          calls approved scripts via the regular <code>Bash</code> tool.
+          {t('rightSidebar.scripts.emptyBody')}
         </p>
       </div>
     );
@@ -3918,7 +3903,7 @@ function ScriptsPanel({ sessionId }: { sessionId: string }) {
     <div className="p-2 space-y-3">
       {pending.length > 0 && (
         <ScriptsGroup
-          title="Pending review"
+          title={t('rightSidebar.scripts.group.pendingReview')}
           accent="text-amber-300"
           empty={null}
         >
@@ -3928,14 +3913,14 @@ function ScriptsPanel({ sessionId }: { sessionId: string }) {
         </ScriptsGroup>
       )}
       {approved.length > 0 && (
-        <ScriptsGroup title="Approved" accent="text-emerald-300" empty={null}>
+        <ScriptsGroup title={t('rightSidebar.scripts.group.approved')} accent="text-emerald-300" empty={null}>
           {approved.map((p) => (
             <ScriptRow key={p.slug} proposal={p} onClick={() => setSelected(p.slug)} />
           ))}
         </ScriptsGroup>
       )}
       {rejected.length > 0 && (
-        <ScriptsGroup title="Rejected" accent="text-rose-300" empty={null}>
+        <ScriptsGroup title={t('rightSidebar.scripts.group.rejected')} accent="text-rose-300" empty={null}>
           {rejected.map((p) => (
             <ScriptRow key={p.slug} proposal={p} onClick={() => setSelected(p.slug)} />
           ))}
@@ -3989,6 +3974,7 @@ function ScriptRow({
   proposal: import('@/lib/types').ScriptProposal;
   onClick: () => void;
 }) {
+  const { t } = useTranslation();
   const accent =
     proposal.status === 'pending'
       ? 'border-l-amber-500 hover:bg-amber-950/15'
@@ -4011,7 +3997,7 @@ function ScriptRow({
             {proposal.slug}
           </code>
           <span className="shrink-0 text-[9px] uppercase tracking-wide font-mono text-zinc-500">
-            by {proposal.proposedBy}
+            {t('rightSidebar.scripts.proposedBy', { proposedBy: proposal.proposedBy })}
           </span>
         </div>
         <p className="text-[11px] leading-relaxed font-mono text-zinc-400 line-clamp-2 break-words">
@@ -4031,6 +4017,7 @@ function ScriptDetailModal({
   proposal: import('@/lib/types').ScriptProposal;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const [pending, setPending] = useState<'approve' | 'reject' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reviewNotes, setReviewNotes] = useState('');
@@ -4061,7 +4048,7 @@ function ScriptDetailModal({
 
   const handleReject = async () => {
     if (rejectReason.trim().length === 0) {
-      setError('Reject requires a reason.');
+      setError(t('rightSidebar.scripts.modal.rejectError'));
       return;
     }
     setPending('reject');
@@ -4107,16 +4094,10 @@ function ScriptDetailModal({
               </span>
             </div>
             <p className="text-[10px] font-mono text-zinc-500 mt-1">
-              proposed by{' '}
-              <span className="text-zinc-300">{proposal.proposedBy}</span>{' '}
-              ·{' '}
-              <span className="text-zinc-400">
-                {new Date(proposal.proposedAt).toLocaleString()}
-              </span>
+              {t('rightSidebar.scripts.modal.proposedBy', { proposer: proposal.proposedBy, date: new Date(proposal.proposedAt).toLocaleString() })}
               {proposal.reviewedBy && (
                 <>
-                  {' · '}reviewed by{' '}
-                  <span className="text-zinc-300">{proposal.reviewedBy}</span>
+                  {' · '}{t('rightSidebar.scripts.modal.reviewedBy', { reviewer: proposal.reviewedBy })}
                 </>
               )}
             </p>
@@ -4125,7 +4106,7 @@ function ScriptDetailModal({
             type="button"
             onClick={onClose}
             className="text-zinc-500 hover:text-zinc-100 w-7 h-7 flex items-center justify-center rounded hover:bg-bg-elevated"
-            aria-label="close"
+            aria-label={t('common.close')}
           >
             ✕
           </button>
@@ -4134,7 +4115,7 @@ function ScriptDetailModal({
         <div className="flex-1 overflow-y-auto scrollbar-thin px-5 py-4 space-y-4">
           <section>
             <h4 className="text-[10px] uppercase tracking-widest font-mono text-zinc-500 mb-1.5">
-              Reason
+              {t('rightSidebar.scripts.modal.section.reason')}
             </h4>
             <p className="text-[12px] leading-relaxed font-mono text-zinc-200 whitespace-pre-wrap break-words">
               {proposal.reason}
@@ -4142,7 +4123,7 @@ function ScriptDetailModal({
           </section>
           <section>
             <h4 className="text-[10px] uppercase tracking-widest font-mono text-zinc-500 mb-1.5">
-              Body
+              {t('rightSidebar.scripts.modal.section.body')}
             </h4>
             <pre className="text-[11px] leading-relaxed font-mono text-zinc-100 whitespace-pre-wrap break-words bg-bg-subtle border border-border rounded p-3 overflow-x-auto">
 {proposal.body}
@@ -4152,8 +4133,8 @@ function ScriptDetailModal({
             <section>
               <h4 className="text-[10px] uppercase tracking-widest font-mono text-zinc-500 mb-1.5">
                 {proposal.status === 'approved'
-                  ? 'Approval notes'
-                  : 'Rejection reason'}
+                  ? t('rightSidebar.scripts.modal.section.approvalNotes')
+                  : t('rightSidebar.scripts.modal.section.rejectionReason')}
               </h4>
               <pre
                 className={cn(
@@ -4179,7 +4160,7 @@ function ScriptDetailModal({
                   type="text"
                   value={reviewNotes}
                   onChange={(e) => setReviewNotes(e.target.value)}
-                  placeholder="Optional approval note"
+                  placeholder={t('rightSidebar.scripts.modal.approvalNote.placeholder')}
                   className="w-full bg-bg-subtle border border-border rounded-md px-3 py-1.5 text-[12px] font-mono text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-cyan-600"
                 />
                 <div className="flex items-center justify-end gap-2">
@@ -4189,7 +4170,7 @@ function ScriptDetailModal({
                     disabled={pending !== null}
                     className="text-[11px] font-mono px-3 py-1.5 rounded border border-rose-800/50 bg-rose-950/30 text-rose-200 hover:bg-rose-950/60 disabled:opacity-50"
                   >
-                    Reject…
+                    {t('rightSidebar.scripts.modal.reject')}
                   </button>
                   <button
                     type="button"
@@ -4197,7 +4178,7 @@ function ScriptDetailModal({
                     disabled={pending !== null}
                     className="text-[11px] font-mono px-3 py-1.5 rounded border border-emerald-700 bg-emerald-700/40 text-emerald-100 hover:bg-emerald-700/60 disabled:opacity-50"
                   >
-                    {pending === 'approve' ? 'approving…' : 'Approve'}
+                    {pending === 'approve' ? t('rightSidebar.scripts.modal.approve.pending') : t('rightSidebar.scripts.modal.approve.idle')}
                   </button>
                 </div>
               </>
@@ -4206,7 +4187,7 @@ function ScriptDetailModal({
                 <textarea
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
-                  placeholder="Why are you rejecting? Sup will see this verbatim."
+                  placeholder={t('rightSidebar.scripts.modal.rejectReason.placeholder')}
                   rows={3}
                   className="w-full bg-bg-subtle border border-rose-700/40 rounded-md px-3 py-2 text-[12px] font-mono text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-rose-500 resize-none leading-relaxed"
                 />
@@ -4217,7 +4198,7 @@ function ScriptDetailModal({
                     disabled={pending !== null}
                     className="text-[11px] font-mono text-zinc-400 hover:text-zinc-200 px-2"
                   >
-                    cancel
+                    {t('common.cancel')}
                   </button>
                   <button
                     type="button"
@@ -4225,7 +4206,7 @@ function ScriptDetailModal({
                     disabled={pending !== null || rejectReason.trim().length === 0}
                     className="text-[11px] font-mono px-3 py-1.5 rounded border border-rose-700 bg-rose-700/40 text-rose-100 hover:bg-rose-700/60 disabled:opacity-50"
                   >
-                    {pending === 'reject' ? 'rejecting…' : 'Confirm reject'}
+                    {pending === 'reject' ? t('rightSidebar.scripts.modal.confirmReject.pending') : t('rightSidebar.scripts.modal.confirmReject.idle')}
                   </button>
                 </div>
               </>

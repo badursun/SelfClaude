@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AlertTriangle, ShieldCheck, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { useTranslation } from '../lib/i18n';
 import type { PendingApproval } from '@/lib/types';
 
 const ALWAYS_ALLOW_KEY = (sessionId: string) => `selfclaude.alwaysAllow.${sessionId}`;
@@ -39,6 +40,7 @@ export function ApprovalDialog({
   approval: PendingApproval | null;
   onDecide: (approvalId: string, decision: 'allow' | 'deny') => void;
 }) {
+  const { t } = useTranslation();
   const [alwaysAllow, setAlwaysAllow] = useState(false);
   // Re-load the toggle on session change. We default to off — the
   // operator must explicitly opt in per session.
@@ -100,17 +102,17 @@ export function ApprovalDialog({
       >
         <div className="flex items-center gap-2 px-4 py-3 border-b-2 border-red-800/50 bg-red-950/30">
           <AlertTriangle size={18} className="text-red-400 shrink-0" />
-          <h3 className="text-sm font-semibold text-red-200 flex-1">Approval requested</h3>
+          <h3 className="text-sm font-semibold text-red-200 flex-1">{t('approvalDialog.title')}</h3>
           <span
             className="text-[10px] uppercase tracking-widest font-bold text-red-300"
-            title={`from ${approval.role}`}
+            title={t('approvalDialog.from', { role: approval.role })}
           >
             {approval.role}
           </span>
           <button
             onClick={() => onDecide(approval.id, 'deny')}
             className="text-red-300 hover:text-white p-0.5"
-            aria-label="cancel (deny)"
+            aria-label={t('approvalDialog.cancelDeny')}
           >
             <X size={14} />
           </button>
@@ -120,7 +122,7 @@ export function ApprovalDialog({
             {approval.action}
           </code>
           <p className="text-xs text-zinc-300">
-            <span className="text-zinc-500">reason: </span>
+            <span className="text-zinc-500">{t('approvalDialog.reason')} </span>
             {approval.reason}
           </p>
           {approval.summary && (
@@ -137,10 +139,9 @@ export function ApprovalDialog({
             />
             <ShieldCheck size={12} className="text-zinc-500" />
             <span>
-              Always allow approvals for this session
+              {t('approvalDialog.alwaysAllow')}
               <span className="block text-[10px] text-red-400 mt-0.5">
-                ⚠ destructive ops (rm -rf, force push, drop table) will run without
-                confirmation. Toggle off any time.
+                {t('approvalDialog.alwaysAllowWarning')}
               </span>
             </span>
           </label>
@@ -150,7 +151,7 @@ export function ApprovalDialog({
             onClick={() => onDecide(approval.id, 'deny')}
             className="px-3 py-1.5 text-xs rounded border border-border hover:bg-bg-elevated text-zinc-300"
           >
-            Deny
+            {t('common.deny')}
           </button>
           <button
             onClick={() => onDecide(approval.id, 'allow')}
@@ -160,7 +161,7 @@ export function ApprovalDialog({
             )}
             autoFocus
           >
-            Allow
+            {t('common.allow')}
           </button>
         </div>
       </div>

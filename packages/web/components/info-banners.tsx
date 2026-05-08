@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Chrome, MessageCircle, X } from 'lucide-react';
+import { useTranslation } from '../lib/i18n';
 
 /**
  * Dismissible info banners for the home page. Today: one for the
@@ -38,6 +39,7 @@ function setDismissed(key: BannerKey): void {
 }
 
 export function InfoBanners() {
+  const { t } = useTranslation();
   // Hydration guard — banner state lives in localStorage, which is
   // unavailable on the server. We render nothing on first mount, then
   // flip to the real visibility check on the first effect tick. Avoids
@@ -71,22 +73,14 @@ export function InfoBanners() {
         <Banner
           icon={<Chrome size={14} className="text-cyan-300" />}
           accent="cyan"
-          title="Claude in Chrome"
+          title={t('infoBanners.chrome.title')}
           body={
-            <>
-              The supervisor can verify UI work + browse pages if you've installed{' '}
-              <a
-                href="https://claude.ai/chrome"
-                target="_blank"
-                rel="noreferrer"
-                className="text-cyan-300 underline hover:text-cyan-100"
-              >
-                Claude in Chrome
-              </a>{' '}
-              and granted permissions. Specialists don't get Chrome — that's intentional, sup
-              holds the verification tool. (We can't detect whether the extension is installed,
-              so this is just FYI.)
-            </>
+            <TranslatedBody
+              textKey="infoBanners.chrome.body"
+              linkText={t('infoBanners.chrome.linkText')}
+              linkHref="https://claude.ai/chrome"
+              linkClass="text-cyan-300 underline hover:text-cyan-100"
+            />
           }
           onDismiss={() => dismiss('chrome')}
         />
@@ -95,28 +89,63 @@ export function InfoBanners() {
         <Banner
           icon={<MessageCircle size={14} className="text-emerald-300" />}
           accent="emerald"
-          title="Telegram fallback"
+          title={t('infoBanners.telegram.title')}
           body={
-            <>
-              Questions or approvals you don't answer in 15 seconds can be forwarded to a
-              Telegram chat. Set up a bot via{' '}
-              <a
-                href="https://core.telegram.org/bots#how-do-i-create-a-bot"
-                target="_blank"
-                rel="noreferrer"
-                className="text-emerald-300 underline hover:text-emerald-100"
-              >
-                @BotFather
-              </a>
-              , put the token in <code className="text-emerald-200/80">.env</code>, then run{' '}
-              <code className="text-emerald-200/80">selfclaude link-telegram</code> to pair the
-              chat.
-            </>
+            <TranslatedTelegramBody />
           }
           onDismiss={() => dismiss('telegram')}
         />
       )}
     </div>
+  );
+}
+
+function TranslatedBody({
+  textKey,
+  linkText,
+  linkHref,
+  linkClass,
+}: {
+  textKey: string;
+  linkText: string;
+  linkHref: string;
+  linkClass: string;
+}) {
+  const { t } = useTranslation();
+  const raw = t(textKey as import('../lib/i18n').TranslationKey);
+  const parts = raw.split('{link}');
+  return (
+    <>
+      {parts[0]}
+      <a href={linkHref} target="_blank" rel="noreferrer" className={linkClass}>
+        {linkText}
+      </a>
+      {parts[1] ?? ''}
+    </>
+  );
+}
+
+function TranslatedTelegramBody() {
+  const { t } = useTranslation();
+  const raw = t('infoBanners.telegram.body' as import('../lib/i18n').TranslationKey);
+  const segments = raw.split(/\{link\}|\{envFile\}|\{command\}/);
+  return (
+    <>
+      {segments[0]}
+      <a
+        href="https://core.telegram.org/bots#how-do-i-create-a-bot"
+        target="_blank"
+        rel="noreferrer"
+        className="text-emerald-300 underline hover:text-emerald-100"
+      >
+        {t('infoBanners.telegram.linkText')}
+      </a>
+      {segments[1]}
+      <code className="text-emerald-200/80">.env</code>
+      {segments[2]}
+      <code className="text-emerald-200/80">selfclaude link-telegram</code>
+      {segments[3] ?? ''}
+    </>
   );
 }
 
@@ -133,6 +162,7 @@ function Banner({
   body: React.ReactNode;
   onDismiss: () => void;
 }) {
+  const { t } = useTranslation();
   const accentClass =
     accent === 'cyan'
       ? 'border-cyan-800/40 bg-cyan-950/20 text-cyan-100'
@@ -159,8 +189,8 @@ function Banner({
         type="button"
         onClick={onDismiss}
         className="shrink-0 p-1 rounded text-zinc-500 hover:text-zinc-200 hover:bg-bg-elevated/40"
-        aria-label="dismiss"
-        title="Dismiss"
+        aria-label={t('common.dismiss')}
+        title={t('common.dismissTitle')}
       >
         <X size={12} />
       </button>

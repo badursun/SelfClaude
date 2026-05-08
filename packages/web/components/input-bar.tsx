@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Send } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { useTranslation } from '../lib/i18n';
 
 /**
  * Built-in palette per agent variant. Each entry hands InputBar a fully
@@ -103,6 +104,7 @@ export function InputBar({
   onSubmit,
   initialValue = '',
 }: InputBarProps) {
+  const { t } = useTranslation();
   const [text, setText] = useState(initialValue);
 
   const isSup = variant === 'sup';
@@ -113,15 +115,15 @@ export function InputBar({
 
   const placeholder = isSup
     ? hasPendingQuestion
-      ? 'type answer ↵'
+      ? t('inputBar.placeholder.answerQuestion')
       : hasPendingApproval
-        ? 'y to allow, anything else denies ↵'
+        ? t('inputBar.placeholder.pendingApproval')
         : busy
-          ? 'working…'
-          : 'message supervisor ↵'
+          ? t('inputBar.placeholder.busy')
+          : t('inputBar.placeholder.messageSup')
     : busy
-      ? 'working…'
-      : `message ${theme.label} ↵`;
+      ? t('inputBar.placeholder.busy')
+      : t('inputBar.placeholder.messageAgent', { label: theme.label });
 
   // Sup keeps its Q/A bypass — even when the conversation is mid-turn,
   // the operator can answer a pending question / approval.
@@ -184,7 +186,7 @@ export function InputBar({
           theme.button,
           'disabled:opacity-40 disabled:cursor-not-allowed',
         )}
-        aria-label={`send to ${theme.label}`}
+        aria-label={t('inputBar.send.ariaLabel', { label: theme.label })}
       >
         <Send size={14} />
       </button>

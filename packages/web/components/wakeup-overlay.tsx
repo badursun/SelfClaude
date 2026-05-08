@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { AlarmClock, Zap } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useTranslation } from '../lib/i18n';
 import type { ChatLogEntry } from '@/lib/types';
 
 /**
@@ -94,6 +95,7 @@ export function WakeupOverlay({
   wakeup: PendingWakeup;
   variant: 'supervisor' | 'developer';
 }) {
+  const { t } = useTranslation();
   const params = useParams<{ id: string }>();
   const sessionId = params?.id;
   const [now, setNow] = useState(() => Date.now());
@@ -131,13 +133,13 @@ export function WakeupOverlay({
 
   const accent = variant === 'supervisor' ? 'text-cyan-300' : 'text-rose-300';
   const accentDim = variant === 'supervisor' ? 'text-cyan-400' : 'text-rose-400';
-  const label = variant === 'supervisor' ? 'supervisor sleeping' : 'developer sleeping';
+  const label = variant === 'supervisor' ? t('wakeupOverlay.label.supervisor') : t('wakeupOverlay.label.developer');
 
   return (
     <div className="absolute inset-0 z-10 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center gap-3 px-6 text-center">
       <AlarmClock size={32} className={accentDim} />
       <div className="text-[10px] uppercase tracking-widest text-zinc-400">
-        {label} · wake in
+        {label} {t('wakeupOverlay.wakeIn')}
       </div>
       <div
         className={`font-mono tabular-nums text-3xl font-semibold ${accent}`}
@@ -160,7 +162,7 @@ export function WakeupOverlay({
         className="mt-2 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium border border-rose-700/60 bg-rose-950/40 text-rose-200 hover:bg-rose-900/60 hover:border-rose-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <Zap size={12} />
-        {firing ? 'firing…' : 'wake now'}
+        {firing ? t('wakeupOverlay.wakeNow.firing') : t('wakeupOverlay.wakeNow.idle')}
       </button>
       {error && (
         <div className="text-[10px] text-red-400 max-w-md leading-tight">{error}</div>

@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { useTranslation } from '../lib/i18n';
 
 /**
  * Lightweight modal confirm dialog. Rendered inline (no portal) — the
@@ -15,8 +16,8 @@ export function ConfirmDialog({
   open,
   title,
   message,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  confirmLabel,
+  cancelLabel,
   variant = 'default',
   onConfirm,
   onCancel,
@@ -30,6 +31,9 @@ export function ConfirmDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
+  const resolvedConfirmLabel = confirmLabel ?? t('confirmDialog.defaultConfirm');
+  const resolvedCancelLabel = cancelLabel ?? t('common.cancel');
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
@@ -63,7 +67,7 @@ export function ConfirmDialog({
           <button
             onClick={onCancel}
             className="text-zinc-500 hover:text-zinc-200 p-0.5"
-            aria-label="cancel"
+            aria-label={t('common.cancel')}
           >
             <X size={14} />
           </button>
@@ -76,13 +80,13 @@ export function ConfirmDialog({
             onClick={onCancel}
             className="px-3 py-1.5 text-xs rounded border border-border hover:bg-bg-elevated text-zinc-300"
           >
-            {cancelLabel}
+            {resolvedCancelLabel}
           </button>
           <button
             onClick={onConfirm}
             className={cn('px-3 py-1.5 text-xs rounded border font-medium', confirmStyle)}
           >
-            {confirmLabel}
+            {resolvedConfirmLabel}
           </button>
         </div>
       </div>

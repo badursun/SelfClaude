@@ -2,6 +2,7 @@
 
 import { useSessionStore } from '@/lib/store';
 import { getFailureModeUI } from '@/lib/failure-modes';
+import { useTranslation } from '@/lib/i18n';
 import { SessionBanner } from './session-banner';
 
 /**
@@ -24,6 +25,7 @@ import { SessionBanner } from './session-banner';
  * unknown).
  */
 export function TurnErrorBanner({ sessionId }: { sessionId: string }) {
+  const { t } = useTranslation();
   const error = useSessionStore((s) => s.sessions[sessionId]?.lastTurnError ?? null);
   const dismiss = useSessionStore((s) => s.dismissTurnError);
 
@@ -42,13 +44,13 @@ export function TurnErrorBanner({ sessionId }: { sessionId: string }) {
         <div className="space-y-1.5">
           <div>{mode.description}</div>
           <div className="text-zinc-300/80">
-            <span className="font-semibold text-zinc-200">What to do: </span>
+            <span className="font-semibold text-zinc-200">{t('turnErrorBanner.whatToDo')}</span>
             {mode.suggestedAction}
           </div>
           {error.message && error.message !== mode.label && (
             <details className="text-[10px] text-zinc-400 pt-1">
               <summary className="cursor-pointer hover:text-zinc-200 select-none">
-                show raw message
+                {t('turnErrorBanner.showRaw')}
               </summary>
               <pre className="mt-1 whitespace-pre-wrap font-mono text-[10px] bg-bg-elevated/40 rounded p-1.5 border border-border/30 max-h-40 overflow-y-auto">
                 {error.message}

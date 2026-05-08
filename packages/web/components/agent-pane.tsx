@@ -12,6 +12,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { useTranslation } from '../lib/i18n';
 import { computeAgentStatus } from './agent-status';
 import { AgentTimeline } from './agent-timeline';
 import type { ChatLogEntry, SessionMeta } from '@/lib/types';
@@ -264,15 +265,6 @@ const AGENT_LABEL: Record<string, string> = {
   refactorer: 'refactorer',
 };
 
-const AGENT_DESCRIPTION: Record<string, string> = {
-  developer: 'Backend / general-purpose implementation. Writes code, runs tests, edits configs.',
-  'ui-dev': 'Frontend specialist (admin-panel oriented). shadcn/ui + Tailwind, strict standards.',
-  security: 'Read-only auditor. Inspects diffs/configs for secrets, injection, auth bypass, deps.',
-  tester:
-    'Verification-only specialist. Adds + runs tests; refuses to edit product code or change a passing assertion.',
-  refactorer:
-    'Bounded-scope rework. Renames / splits / dedupes / tightens types; refuses features, new deps, or behaviour changes.',
-};
 
 const AGENT_TAB_ACCENT: Record<string, { active: string; idle: string; dot: string }> = {
   developer: {
@@ -316,6 +308,7 @@ function AgentTab({
   lastTs: number;
   onClick: () => void;
 }) {
+  const { t } = useTranslation();
   const Icon = AGENT_ICON[agent] ?? Plus;
   const accent = AGENT_TAB_ACCENT[agent] ?? AGENT_TAB_ACCENT.developer!;
 
@@ -339,7 +332,7 @@ function AgentTab({
             ? 'border-zinc-500 text-zinc-300 bg-bg-elevated/40'
             : 'border-transparent text-zinc-600 hover:text-zinc-300 hover:bg-bg-elevated/30',
         )}
-        title={`${agent} — not active. Click to propose dispatching to sup.`}
+        title={t('agentPane.tab.notActive.title', { agent })}
       >
         <Icon size={11} className="opacity-60" />
         <span className="opacity-80">{agent}</span>
@@ -365,17 +358,17 @@ function AgentTab({
               'inline-block w-2 h-2 rounded-full animate-pulse',
               accent.dot,
             )}
-            title="streaming now"
+            title={t('agentPane.tab.streamingNow')}
           />
           <span className={cn('lowercase tracking-normal italic', accent.idle.includes('text-') ? '' : '')}>
-            running
+            {t('agentPane.tab.running')}
           </span>
         </>
       )}
       {recent && !live && (
         <span
           className={cn('inline-block w-1.5 h-1.5 rounded-full', accent.dot)}
-          title="recent activity"
+          title={t('agentPane.tab.recentActivity')}
         />
       )}
     </button>
@@ -399,12 +392,21 @@ function ProposeAgentPanel({
   agent: string;
   onPropose: (text: string) => Promise<void> | void;
 }) {
+  const { t } = useTranslation();
   const [text, setText] = useState('');
   const [pending, setPending] = useState(false);
   const Icon = AGENT_ICON[agent] ?? Sparkles;
   const accent = AGENT_TAB_ACCENT[agent] ?? AGENT_TAB_ACCENT.developer!;
-  const description =
-    AGENT_DESCRIPTION[agent] ?? 'Custom specialist. Sup will brief based on your request.';
+
+  const descriptionKey = (
+    agent === 'developer' ? 'agentPane.desc.developer'
+    : agent === 'ui-dev' ? 'agentPane.desc.uiDev'
+    : agent === 'security' ? 'agentPane.desc.security'
+    : agent === 'tester' ? 'agentPane.desc.tester'
+    : agent === 'refactorer' ? 'agentPane.desc.refactorer'
+    : 'agentPane.desc.custom'
+  ) as Parameters<typeof t>[0];
+  const description = t(descriptionKey);
   const label = AGENT_LABEL[agent] ?? agent;
 
   const handleSubmit = async () => {
@@ -433,21 +435,17 @@ function ProposeAgentPanel({
           </span>
           <div className="flex-1 min-w-0">
             <h3 className="text-[13px] font-mono font-semibold text-zinc-100">
-              {label} <span className="text-[10px] uppercase tracking-widest text-zinc-500 ml-1">not active</span>
+              {label} <span className="text-[10px] uppercase tracking-widest text-zinc-500 ml-1">{t('agentPane.tab.notActive')}</span>
             </h3>
             <p className="text-[11px] text-zinc-400 leading-relaxed mt-0.5">{description}</p>
           </div>
         </div>
         <div className="rounded-md border border-border bg-bg-panel/50 p-3 mb-3">
           <p className="text-[11px] text-zinc-300 leading-relaxed">
-            Tell <span className="text-cyan-300 font-medium">sup</span> what you'd like
-            <span className="text-zinc-100 font-medium"> {label}</span> to do.
+            {t('agentPane.propose.tellSup', { label })}
           </p>
           <p className="text-[10px] text-zinc-500 leading-relaxed mt-1.5">
-            Sup will read your request, decide whether dispatching {label} is the right
-            move (or push back if a different specialist fits better), and brief them
-            with the context they need. You'll see sup's response in the supervisor
-            chat on the left.
+            {t('agentPane.propose.detail', { label })}
           </p>
         </div>
         <textarea
@@ -459,7 +457,7 @@ function ProposeAgentPanel({
               void handleSubmit();
             }
           }}
-          placeholder={`e.g. "Please have ${label} review the login form for accessibility issues."`}
+          placeholder={t('agentPane.propose.placeholder', { label })}
           rows={5}
           disabled={pending}
           autoFocus
@@ -467,7 +465,7 @@ function ProposeAgentPanel({
         />
         <div className="mt-2 flex items-center gap-2">
           <span className="text-[10px] font-mono text-zinc-600">
-            ⌘+Enter to send
+            {t('agentPane.propose.shortcut')}
           </span>
           <span className="flex-1" />
           <button
@@ -482,10 +480,10 @@ function ProposeAgentPanel({
             )}
           >
             {pending ? (
-              <>sending…</>
+              <>{t('agentPane.propose.button.sending')}</>
             ) : (
               <>
-                <Send size={11} /> Propose to sup
+                <Send size={11} /> {t('agentPane.propose.button.propose')}
               </>
             )}
           </button>

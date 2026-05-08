@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Octagon } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { useTranslation } from '../lib/i18n';
 import { api } from '@/lib/api';
 import { ConfirmDialog } from './confirm-dialog';
 import type { ChatLogEntry, SessionMeta } from '@/lib/types';
@@ -16,35 +17,6 @@ export interface AgentStatusInfo {
   toolDetail?: string;
 }
 
-const SUP_PHRASES: Record<StatusKind, string[]> = {
-  thinking: [
-    'thinking',
-    'planning',
-    'considering options',
-    'analyzing',
-    'reasoning',
-    'reviewing context',
-    'composing reply',
-    'mulling it over',
-  ],
-  writing: ['writing', 'composing', 'drafting'],
-  tool: ['working'],
-  working: ['working', 'orchestrating', 'coordinating'],
-};
-
-const DEV_PHRASES: Record<StatusKind, string[]> = {
-  thinking: ['thinking', 'figuring it out', 'planning the next step'],
-  writing: ['writing', 'composing answer', 'drafting reply'],
-  tool: ['running'],
-  working: [
-    'working',
-    'investigating',
-    'reading code',
-    'reviewing',
-    'iterating',
-    'tinkering',
-  ],
-};
 
 const ROTATION_MS = 14_000;
 
@@ -165,6 +137,7 @@ export function AgentStatus({
    */
   variant: 'sup' | 'dev' | string;
 }) {
+  const { t, tArray } = useTranslation();
   const params = useParams<{ id: string }>();
   const sessionId = params?.id;
   const [tick, setTick] = useState(0);
@@ -173,7 +146,7 @@ export function AgentStatus({
 
   useEffect(() => {
     if (!status) return;
-    const id = setInterval(() => setTick((t) => t + 1), ROTATION_MS);
+    const id = setInterval(() => setTick((tk) => tk + 1), ROTATION_MS);
     return () => clearInterval(id);
   }, [status]);
 
@@ -181,12 +154,25 @@ export function AgentStatus({
 
   const isSup = variant === 'sup';
   const colorClass = isSup ? 'text-cyan-400' : 'text-amber-400';
-  const phrases = isSup ? SUP_PHRASES : DEV_PHRASES;
+
+  // Resolve phrases from i18n catalog.
+  const prefix = isSup ? 'agentStatus.sup' : 'agentStatus.dev';
+  const phrases: Record<StatusKind, string[]> = {
+    thinking: tArray(`${prefix}.thinking` as Parameters<typeof tArray>[0]),
+    writing:  tArray(`${prefix}.writing`  as Parameters<typeof tArray>[0]),
+    tool:     tArray(`${prefix}.tool`     as Parameters<typeof tArray>[0]),
+    working:  tArray(`${prefix}.working`  as Parameters<typeof tArray>[0]),
+  };
+
   // Variant labels: sup → 'supervisor', dev → 'developer', anything
   // else (specialist) → the agent name verbatim. Falls back cleanly
   // for any future custom agent.
   const variantLabel =
-    variant === 'sup' ? 'supervisor' : variant === 'dev' ? 'developer' : variant;
+    variant === 'sup'
+      ? t('agentStatus.variantLabel.supervisor')
+      : variant === 'dev'
+        ? t('agentStatus.variantLabel.developer')
+        : variant;
 
   let labelText: string;
   let detail: string | undefined;
@@ -248,18 +234,18 @@ export function AgentStatus({
             'border-red-800/60 bg-red-950/30 text-red-300 hover:bg-red-900/50 hover:border-red-700',
             'disabled:opacity-50',
           )}
-          title={`emergency stop ${role}`}
+          title={t('agentStatus.stop.title', { role })}
         >
           <Octagon size={10} />
-          stop
+          {t('agentStatus.stop')}
         </button>
       </div>
       <ConfirmDialog
         open={confirming}
-        title={`Stop the ${role}?`}
-        message={`This will SIGTERM the ${variantLabel}'s Claude Code subprocess immediately. Any in-flight tool call will be killed and the turn will end with an error. The session itself stays alive — you can prompt it again afterward.\n\nUse this when the ${variantLabel} appears stuck (a hung Bash command, a runaway loop, a wakeup that shouldn't have fired).`}
-        confirmLabel="Stop now"
-        cancelLabel="Keep running"
+        title={t('agentStatus.confirm.title', { role })}
+        message={t('agentStatus.confirm.message', { variantLabel })}
+        confirmLabel={t('agentStatus.confirm.stop')}
+        cancelLabel={t('agentStatus.confirm.keepRunning')}
         variant="danger"
         onConfirm={handleAbort}
         onCancel={() => setConfirming(false)}

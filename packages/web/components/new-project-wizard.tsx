@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, ArrowRight, Loader2, Rocket, Search } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { useTranslation } from '../lib/i18n';
 
 /**
  * 3-step onboarding wizard. Run between "operator picks a folder" and
@@ -28,38 +29,6 @@ import { cn } from '@/lib/cn';
 
 export type ProjectType = 'admin-panel' | 'marketing-site' | 'library' | 'mobile' | 'other';
 
-const PROJECT_TYPE_OPTIONS: Array<{
-  value: ProjectType;
-  label: string;
-  description: string;
-}> = [
-  {
-    value: 'admin-panel',
-    label: 'Admin panel / dashboard',
-    description: 'CRUD tables, modals, sidebar+header layout. Triggers admin-panel DNA on ui-dev.',
-  },
-  {
-    value: 'marketing-site',
-    label: 'Marketing site / landing',
-    description: 'Bespoke design, mostly content + animation. No DNA applied; ui-dev stays general.',
-  },
-  {
-    value: 'library',
-    label: 'Library / package',
-    description: 'Reusable code with no UI; tests + types are the deliverable.',
-  },
-  {
-    value: 'mobile',
-    label: 'Mobile app',
-    description: 'iOS / Android / cross-platform. No bundled DNA yet; ui-dev gets general guidance.',
-  },
-  {
-    value: 'other',
-    label: 'Other',
-    description: 'CLI, daemon, ML pipeline — anything else. Sup will ask follow-ups.',
-  },
-];
-
 export interface WizardSubmission {
   projectName: string;
   projectType: ProjectType;
@@ -84,6 +53,7 @@ export function NewProjectWizard({
   onDiscoverExisting: () => Promise<void>;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [name, setName] = useState(() => deriveDefaultName(cwd));
   const [type, setType] = useState<ProjectType>('admin-panel');
@@ -162,7 +132,7 @@ export function NewProjectWizard({
           <Rocket size={16} className="text-cyan-400 shrink-0" />
           <div className="flex-1">
             <h2 className="text-[14px] font-mono font-semibold text-zinc-100">
-              New project setup
+              {t('wizard.title')}
             </h2>
             <p className="text-[10px] font-mono text-zinc-500 mt-0.5 truncate" title={cwd}>
               {cwd}
@@ -220,7 +190,7 @@ export function NewProjectWizard({
               disabled={submitting !== null}
               className="text-[12px] font-mono px-3 py-1.5 rounded border border-border bg-bg-elevated/40 text-zinc-300 hover:bg-bg-elevated/70 inline-flex items-center gap-1.5"
             >
-              <ArrowLeft size={12} /> back
+              <ArrowLeft size={12} /> {t('wizard.footer.back')}
             </button>
           )}
           {step === 1 && (
@@ -230,7 +200,7 @@ export function NewProjectWizard({
               disabled={submitting !== null}
               className="text-[11px] font-mono text-zinc-500 hover:text-zinc-200 underline"
             >
-              {submitting === 'skip' ? 'opening…' : 'skip wizard, talk to sup directly'}
+              {submitting === 'skip' ? t('wizard.footer.skipWizard.opening') : t('wizard.footer.skipWizard.idle')}
             </button>
           )}
           <span className="flex-1" />
@@ -246,7 +216,7 @@ export function NewProjectWizard({
                   : 'border-zinc-700 bg-zinc-900/40 text-zinc-600 cursor-not-allowed',
               )}
             >
-              next <ArrowRight size={12} />
+              {t('wizard.footer.next')} <ArrowRight size={12} />
             </button>
           )}
           {step === 4 && (
@@ -263,11 +233,11 @@ export function NewProjectWizard({
             >
               {submitting === 'launch' ? (
                 <>
-                  <Loader2 size={12} className="animate-spin" /> launching…
+                  <Loader2 size={12} className="animate-spin" /> {t('wizard.footer.launch.pending')}
                 </>
               ) : (
                 <>
-                  <Rocket size={12} /> launch with brief
+                  <Rocket size={12} /> {t('wizard.footer.launch.idle')}
                 </>
               )}
             </button>
@@ -294,6 +264,7 @@ function DiscoverExistingBanner({
   pending: boolean;
   disabled: boolean;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="mb-5 rounded-md border border-emerald-700/40 bg-emerald-950/20 p-3 flex items-start gap-3">
       <span className="shrink-0 w-7 h-7 rounded-md bg-emerald-900/40 border border-emerald-700/40 flex items-center justify-center mt-0.5">
@@ -301,11 +272,10 @@ function DiscoverExistingBanner({
       </span>
       <div className="flex-1 min-w-0">
         <h4 className="text-[12px] font-mono font-semibold text-emerald-100">
-          Already-built project?
+          {t('wizard.discover.title')}
         </h4>
         <p className="text-[11px] text-emerald-200/70 mt-0.5 leading-relaxed">
-          If this folder already contains code, skip the wizard — sup will read
-          the manifests, map the architecture, and ask what you want to work on.
+          {t('wizard.discover.body')}
         </p>
       </div>
       <button
@@ -323,11 +293,11 @@ function DiscoverExistingBanner({
       >
         {pending ? (
           <>
-            <Loader2 size={11} className="animate-spin" /> discovering…
+            <Loader2 size={11} className="animate-spin" /> {t('wizard.discover.button.pending')}
           </>
         ) : (
           <>
-            <Search size={11} /> Discover existing
+            <Search size={11} /> {t('wizard.discover.button.idle')}
           </>
         )}
       </button>
@@ -370,29 +340,62 @@ function Step1Basics({
   goal: string;
   setGoal: (v: string) => void;
 }) {
+  const { t } = useTranslation();
+
+  const projectTypeOptions: Array<{
+    value: ProjectType;
+    label: string;
+    description: string;
+  }> = [
+    {
+      value: 'admin-panel',
+      label: t('wizard.projectType.adminPanel.label'),
+      description: t('wizard.projectType.adminPanel.description'),
+    },
+    {
+      value: 'marketing-site',
+      label: t('wizard.projectType.marketingSite.label'),
+      description: t('wizard.projectType.marketingSite.description'),
+    },
+    {
+      value: 'library',
+      label: t('wizard.projectType.library.label'),
+      description: t('wizard.projectType.library.description'),
+    },
+    {
+      value: 'mobile',
+      label: t('wizard.projectType.mobile.label'),
+      description: t('wizard.projectType.mobile.description'),
+    },
+    {
+      value: 'other',
+      label: t('wizard.projectType.other.label'),
+      description: t('wizard.projectType.other.description'),
+    },
+  ];
+
   return (
     <div className="space-y-5">
       <div>
         <h3 className="text-[12px] font-mono font-semibold text-zinc-100 mb-1">
-          Step 1 — Project basics
+          {t('wizard.step1.heading')}
         </h3>
         <p className="text-[11px] text-zinc-500 leading-relaxed">
-          What are we building? Type drives whether the supervisor applies a
-          DNA template to the right specialist.
+          {t('wizard.step1.subtitle')}
         </p>
       </div>
-      <Field label="Project name" required>
+      <Field label={t('wizard.step1.projectName.label')} required>
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="e.g. Kick CRM"
+          placeholder={t('wizard.step1.projectName.placeholder')}
           className="w-full bg-bg-subtle border border-border rounded-md px-3 py-2 text-[12px] font-mono text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-cyan-600"
         />
       </Field>
-      <Field label="Project type" required>
+      <Field label={t('wizard.step1.projectType.label')} required>
         <div className="grid gap-1.5">
-          {PROJECT_TYPE_OPTIONS.map((opt) => (
+          {projectTypeOptions.map((opt) => (
             <label
               key={opt.value}
               className={cn(
@@ -422,12 +425,12 @@ function Step1Basics({
           ))}
         </div>
       </Field>
-      <Field label="Goal (one line)" required>
+      <Field label={t('wizard.step1.goal.label')} required>
         <input
           type="text"
           value={goal}
           onChange={(e) => setGoal(e.target.value)}
-          placeholder="e.g. Internal CRM for sales team to track leads + deals"
+          placeholder={t('wizard.step1.goal.placeholder')}
           className="w-full bg-bg-subtle border border-border rounded-md px-3 py-2 text-[12px] font-mono text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-cyan-600"
         />
       </Field>
@@ -442,6 +445,7 @@ function Step2Stack({
   stackBrief: string;
   setStackBrief: (v: string) => void;
 }) {
+  const { t } = useTranslation();
   const example =
     'Backend Fastify API with Swagger, frontend Next.js with App Router, ' +
     'shadcn + Tailwind v4, Postgres with Drizzle, zod required, ' +
@@ -450,21 +454,16 @@ function Step2Stack({
     <div className="space-y-4">
       <div>
         <h3 className="text-[12px] font-mono font-semibold text-zinc-100 mb-1">
-          Step 2 — Tech stack brief
+          {t('wizard.step2.heading')}
         </h3>
         <p className="text-[11px] text-zinc-500 leading-relaxed">
-          Free-form paragraph. The supervisor parses this into a normalized{' '}
-          <code className="text-zinc-400">.selfclaude/stack.json</code> (e.g.{' '}
-          "next.js" / "nextjs" / "Next js" all become <strong>Next.js</strong>),
-          locks the items you committed to, and reads it before delegating
-          tasks. You can edit/lock individual items afterwards via the Stack
-          panel.
+          {t('wizard.step2.subtitle')}
         </p>
       </div>
       <Field
-        label="Stack description"
+        label={t('wizard.step2.stackDescription.label')}
         required
-        hint={`Min 20 chars. Mention language, framework(s), database, key libraries — natural prose is fine.`}
+        hint={t('wizard.step2.stackDescription.hint')}
       >
         <textarea
           value={stackBrief}
@@ -479,7 +478,7 @@ function Step2Stack({
         onClick={() => setStackBrief(example)}
         className="text-[10px] font-mono text-zinc-500 hover:text-zinc-200 underline"
       >
-        use example as template
+        {t('wizard.step2.useExample')}
       </button>
     </div>
   );
@@ -492,22 +491,20 @@ function Step3Constraints({
   constraints: string;
   setConstraints: (v: string) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4">
       <div>
         <h3 className="text-[12px] font-mono font-semibold text-zinc-100 mb-1">
-          Step 3 — Constraints (optional)
+          {t('wizard.step3.heading')}
         </h3>
         <p className="text-[11px] text-zinc-500 leading-relaxed">
-          Hard requirements, things-not-to-touch, integrations the agents
-          should honour. Anything that isn't a stack item but matters. Skip
-          this step if you don't have anything to add — sup will ask
-          follow-ups during Discovery.
+          {t('wizard.step3.subtitle')}
         </p>
       </div>
       <Field
-        label="Constraints / non-goals / integrations"
-        hint="One per line works well. Or free prose. Empty is fine."
+        label={t('wizard.step3.constraints.label')}
+        hint={t('wizard.step3.constraints.hint')}
       >
         <textarea
           value={constraints}
@@ -534,40 +531,46 @@ function Step4Review({
   stackBrief: string;
   constraints: string;
 }) {
-  const typeLabel =
-    PROJECT_TYPE_OPTIONS.find((o) => o.value === type)?.label ?? type;
+  const { t } = useTranslation();
+
+  const projectTypeOptions: Array<{ value: ProjectType; label: string }> = [
+    { value: 'admin-panel', label: t('wizard.projectType.adminPanel.label') },
+    { value: 'marketing-site', label: t('wizard.projectType.marketingSite.label') },
+    { value: 'library', label: t('wizard.projectType.library.label') },
+    { value: 'mobile', label: t('wizard.projectType.mobile.label') },
+    { value: 'other', label: t('wizard.projectType.other.label') },
+  ];
+
+  const typeLabel = projectTypeOptions.find((o) => o.value === type)?.label ?? type;
   return (
     <div className="space-y-5">
       <div>
         <h3 className="text-[12px] font-mono font-semibold text-zinc-100 mb-1">
-          Step 4 — Review
+          {t('wizard.step4.heading')}
         </h3>
         <p className="text-[11px] text-zinc-500 leading-relaxed">
-          Confirm and launch. The supervisor will use this as authoritative
-          input — parse the stack brief into a normalized manifest, apply
-          DNA if applicable, write CLAUDE.md, then ask follow-up questions
-          for anything missing.
+          {t('wizard.step4.subtitle')}
         </p>
       </div>
-      <ReviewBlock label="Project">
+      <ReviewBlock label={t('wizard.step4.projectLabel')}>
         <p className="text-[12px] font-mono text-zinc-200">
           <strong>{name}</strong>
           <span className="text-zinc-500"> · {typeLabel}</span>
         </p>
         <p className="text-[11px] font-mono text-zinc-400 mt-1">{goal}</p>
       </ReviewBlock>
-      <ReviewBlock label="Stack brief">
+      <ReviewBlock label={t('wizard.step4.stackBriefLabel')}>
         <pre className="text-[11px] leading-relaxed font-mono text-zinc-300 whitespace-pre-wrap break-words">
           {stackBrief}
         </pre>
       </ReviewBlock>
-      <ReviewBlock label="Constraints">
+      <ReviewBlock label={t('wizard.step4.constraintsLabel')}>
         {constraints.trim().length > 0 ? (
           <pre className="text-[11px] leading-relaxed font-mono text-zinc-300 whitespace-pre-wrap break-words">
             {constraints}
           </pre>
         ) : (
-          <p className="text-[11px] font-mono italic text-zinc-500">(none)</p>
+          <p className="text-[11px] font-mono italic text-zinc-500">{t('wizard.step4.noConstraints')}</p>
         )}
       </ReviewBlock>
     </div>

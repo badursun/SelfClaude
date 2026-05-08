@@ -9,6 +9,7 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { useTranslation } from '../lib/i18n';
 import { AgentStatus, type AgentStatusInfo } from './agent-status';
 import { BubbleMarkdown } from './bubble-markdown';
 import { InputBar } from './input-bar';
@@ -72,6 +73,7 @@ export function AgentTimeline({
    */
   status?: AgentStatusInfo | null;
 }) {
+  const { t } = useTranslation();
   const items = useMemo(() => buildAgentItems(chatLog, agent), [chatLog, agent]);
   const ref = useRef<HTMLDivElement>(null);
   const { isAtBottom, scrollToBottom } = useStickyBottom(
@@ -118,14 +120,18 @@ export function AgentTimeline({
               disabled={loadingHistory}
               className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 hover:text-zinc-100 px-2 py-1 rounded border border-border hover:border-border-strong disabled:opacity-50 disabled:cursor-wait"
             >
-              {loadingHistory ? 'loading…' : 'load older messages'}
+              {loadingHistory ? t('common.loading') : t('agentTimeline.loadOlder')}
             </button>
           </div>
         )}
         {items.length === 0 && !loadingHistory && !hasMoreHistory && (
           <div className="h-full flex items-center justify-center p-6 text-center">
             <p className="text-[11px] text-zinc-500 italic max-w-md leading-relaxed">
-              {emptyMessage(agent)}
+              {agent === 'developer'
+                ? t('agentTimeline.empty.developer')
+                : agent === 'security'
+                  ? t('agentTimeline.empty.security')
+                  : t('agentTimeline.empty.agent', { agent })}
             </p>
           </div>
         )}
@@ -193,7 +199,7 @@ export function AgentTimeline({
                       accent.titleColor,
                     )}
                   >
-                    sup → {agent}
+                    {t('agentTimeline.taskMarker', { agent })}
                   </span>
                 </div>
                 <div className="flex-1 px-3 py-1.5 min-w-0 flex items-center">
@@ -212,7 +218,7 @@ export function AgentTimeline({
                 style={{ margin: '6px 0' }}
               >
                 <FileText size={11} />
-                <span>wrote docs/phases/{item.filename}</span>
+                <span>{t('agentTimeline.phaseDoc.wrote', { filename: item.filename })}</span>
               </div>
             );
           }
@@ -224,7 +230,9 @@ export function AgentTimeline({
                 style={{ margin: '20px 0' }}
               >
                 <div className="text-[10px] text-amber-300/80 mb-0.5 uppercase tracking-wide font-semibold">
-                  you {item.kind === 'user-message' ? `→ ${agent}` : `(note for ${agent})`}
+                  {item.kind === 'user-message'
+                    ? t('agentTimeline.userMessage', { agent })
+                    : t('agentTimeline.userNote', { agent })}
                 </div>
                 <p className="whitespace-pre-wrap break-words text-amber-50 bubble-text">
                   {item.text}
@@ -242,7 +250,7 @@ export function AgentTimeline({
                 )}
                 style={{ margin: '6px 0' }}
               >
-                {item.event === 'summoned' ? '▶' : '◼'} {agent} {item.event}
+                {item.event === 'summoned' ? '▶' : '◼'} {agent} {item.event === 'summoned' ? t('agentTimeline.lifecycle.summoned') : t('agentTimeline.lifecycle.dismissed')}
               </div>
             );
           }
@@ -258,7 +266,7 @@ export function AgentTimeline({
               >
                 <div className="flex items-center gap-1.5 mb-1">
                   <span className="text-[10px] uppercase tracking-widest font-bold text-red-300">
-                    🟥 yargısal karar
+                    {t('agentTimeline.verdict')}
                   </span>
                   <span className="text-[10px] text-red-400 font-mono tabular-nums">
                     #{item.id.toString().padStart(3, '0')}
@@ -280,8 +288,8 @@ export function AgentTimeline({
             'absolute bottom-24 right-4 z-20 rounded-full text-white p-2 shadow-lg shadow-black/40 transition-transform hover:scale-105',
             accent.scrollBtn,
           )}
-          aria-label="scroll to bottom"
-          title="scroll to bottom"
+          aria-label={t('agentTimeline.scrollToBottom')}
+          title={t('agentTimeline.scrollToBottom')}
         >
           <ArrowDown size={14} />
         </button>
@@ -353,17 +361,11 @@ function TimeLabel({ ts }: { ts: number }) {
   );
 }
 
-function emptyMessage(agent: string): string {
-  if (agent === 'developer') return 'No developer activity yet.';
-  if (agent === 'security')
-    return 'No audit reports yet. Talk to security directly via the input below, or wait for the supervisor to delegate a review.';
-  return `${agent} hasn't received a task yet. Prompt the agent directly via the input below, or let the supervisor delegate.`;
-}
-
 /**
  * Reasoning bubble — collapsible, line-counted, mor accent.
  */
 function ThinkingBubble({ text }: { text: string }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const firstLine = text.split('\n').find((l) => l.trim().length > 0)?.trim() ?? '';
   const preview = firstLine.length > 90 ? `${firstLine.slice(0, 87)}…` : firstLine;
@@ -379,10 +381,10 @@ function ThinkingBubble({ text }: { text: string }) {
       >
         <Brain size={11} className="shrink-0 text-violet-400" />
         <span className="text-[10px] uppercase tracking-widest font-semibold text-violet-300">
-          thinking
+          {t('agentTimeline.thinking')}
         </span>
         <span className="text-[10px] text-violet-500 tabular-nums">
-          ({lineCount} lines)
+          {t('agentTimeline.thinking.lineCount', { lineCount })}
         </span>
         {!open && (
           <span className="text-[11px] text-zinc-400 italic font-mono truncate">

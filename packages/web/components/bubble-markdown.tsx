@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import { ChevronRight, Compass } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { useTranslation } from '@/lib/i18n';
 import { CodeBlock } from './code-block';
 
 /**
@@ -323,6 +324,7 @@ const FALLBACK_THEME = AGENT_THEME.developer!;
  * audits, `task → dev` (cyan) for the default developer.
  */
 function TaskBlock({ body, agent }: { body: string; agent: string }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const firstLine = body.split('\n').find((l) => l.trim().length > 0)?.trim() ?? '';
   const summary = firstLine.replace(/^#+\s*/, '').replace(/^\*\*(.+)\*\*$/, '$1');
@@ -352,10 +354,10 @@ function TaskBlock({ body, agent }: { body: string; agent: string }) {
             theme.text,
           )}
         >
-          task → {label}
+          {t('bubbleMarkdown.task.label', { label })}
         </span>
         <span className="text-[10px] text-zinc-300 truncate font-mono italic">
-          {summary || '(empty)'}
+          {summary || t('bubbleMarkdown.task.empty')}
         </span>
       </button>
       {open && (
@@ -384,6 +386,7 @@ function TaskBlock({ body, agent }: { body: string; agent: string }) {
  * from regular sup text.
  */
 function TaskBlockPending({ body, agent }: { body: string; agent: string }) {
+  const { t } = useTranslation();
   const firstLine = body.split('\n').find((l) => l.trim().length > 0)?.trim() ?? '';
   const summary = firstLine.replace(/^#+\s*/, '').replace(/^\*\*(.+)\*\*$/, '$1');
   const theme = AGENT_THEME[agent] ?? FALLBACK_THEME;
@@ -403,14 +406,14 @@ function TaskBlockPending({ body, agent }: { body: string; agent: string }) {
             theme.text,
           )}
         >
-          task → {label}
+          {t('bubbleMarkdown.task.label', { label })}
         </span>
         <span className="typing-dots">
           <span />
           <span />
           <span />
         </span>
-        <span className={cn('text-[10px] italic', theme.textSoft)}>writing…</span>
+        <span className={cn('text-[10px] italic', theme.textSoft)}>{t('bubbleMarkdown.writing')}</span>
         {summary && (
           <span className="text-[10px] text-zinc-400 truncate font-mono italic ml-1">
             {summary}
@@ -445,6 +448,7 @@ function LifecyclePill({
   event: 'summon' | 'dismiss';
   agent: string;
 }) {
+  const { t } = useTranslation();
   const theme = AGENT_THEME[agent] ?? FALLBACK_THEME;
   return (
     <div
@@ -453,7 +457,7 @@ function LifecyclePill({
         theme.pill,
       )}
     >
-      {event === 'summon' ? '▶ summon' : '◼ dismiss'}
+      {event === 'summon' ? t('bubbleMarkdown.lifecycle.summon') : t('bubbleMarkdown.lifecycle.dismiss')}
       <span className="opacity-80 lowercase tracking-normal font-normal italic">
         {agent}
       </span>

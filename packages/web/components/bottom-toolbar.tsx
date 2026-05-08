@@ -19,6 +19,7 @@ import {
 import { api, type SessionMetricsRollup } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import type { ChatLogEntry, RoleMetrics, SessionMeta } from '@/lib/types';
+import { useTranslation, type TranslationKey } from '../lib/i18n';
 
 /**
  * IDE-style status footer. Shows at-a-glance run-state metrics so the
@@ -86,10 +87,12 @@ export function BottomToolbar({
     };
   }, [meta?.id]);
 
+  const { t } = useTranslation();
+
   if (!meta) {
     return (
       <div className="h-7 border-t-2 border-border-strong bg-bg-subtle flex items-center px-3 text-[10px] text-zinc-500">
-        loading…
+        {t('common.loading')}
       </div>
     );
   }
@@ -117,7 +120,7 @@ export function BottomToolbar({
   const todos = countOpenTodos(chatLog);
   const fileCount = countDistinctFiles(chatLog);
 
-  const activity = computeActivity(meta, busy);
+  const activity = computeActivity(meta, busy, t);
 
   return (
     <div className="h-7 border-t-2 border-border-strong bg-bg-subtle flex items-center gap-0 text-[10px] font-mono">
@@ -147,14 +150,14 @@ export function BottomToolbar({
         icon={<Clock size={10} />}
         label={formatDuration(ageMs)}
         color="text-zinc-400"
-        title="wall clock since session opened"
+        title={t('bottomToolbar.wallClock.title')}
       />
       <Sep />
       <Badge
         icon={<Zap size={10} />}
         label={lastTurnMs > 0 ? `${(lastTurnMs / 1000).toFixed(1)}s` : '—'}
         color="text-zinc-400"
-        title="duration of the last completed role turn"
+        title={t('bottomToolbar.lastTurn.title')}
       />
       <Sep />
       <Badge
@@ -162,25 +165,25 @@ export function BottomToolbar({
         label={`$${totalCost.toFixed(4)}`}
         color="text-emerald-300"
         bg="bg-emerald-950/30"
-        title="cumulative cost (sup + dev) in USD"
+        title={t('bottomToolbar.cost.title')}
       />
       <Sep />
       <Badge
         icon={<GitBranch size={10} />}
-        label={`${totalTurns} turns`}
+        label={t('bottomToolbar.turns', { totalTurns })}
         color="text-zinc-400"
-        title="cumulative supervisor + developer turns"
+        title={t('bottomToolbar.turns.title')}
       />
       <Sep />
       <Badge
         icon={<ListChecks size={10} />}
-        label={todos > 0 ? `${todos} todo` : '—'}
+        label={todos > 0 ? t('bottomToolbar.todo', { todos }) : '—'}
         color={todos > 0 ? 'text-yellow-300' : 'text-zinc-500'}
       />
       <Sep />
       <Badge
         icon={<FileText size={10} />}
-        label={fileCount > 0 ? `${fileCount} files` : '—'}
+        label={fileCount > 0 ? t('bottomToolbar.files', { fileCount }) : '—'}
         color={fileCount > 0 ? 'text-purple-300' : 'text-zinc-500'}
       />
       <Sep />
@@ -230,9 +233,11 @@ function MetricsBreakdown({
     };
   }, [open]);
 
+  const { t } = useTranslation();
+
   const rows: { label: string; metrics: RoleMetrics; accent: string }[] = [
-    { label: 'supervisor', metrics: metrics.sup, accent: 'text-cyan-400' },
-    { label: 'developer', metrics: metrics.dev, accent: 'text-amber-400' },
+    { label: t('bottomToolbar.metrics.supervisor'), metrics: metrics.sup, accent: 'text-cyan-400' },
+    { label: t('bottomToolbar.metrics.developer'), metrics: metrics.dev, accent: 'text-amber-400' },
     ...agentEntries.map(([agent, m]) => ({
       label: agent,
       metrics: m,
@@ -249,7 +254,7 @@ function MetricsBreakdown({
           'h-full flex items-center gap-1 px-2 text-[10px] tabular-nums font-mono',
           open ? 'bg-bg-elevated text-zinc-100' : 'text-zinc-400 hover:text-zinc-100',
         )}
-        title="per-role metrics breakdown"
+        title={t('bottomToolbar.breakdown.title')}
       >
         <ChevronUp
           size={10}
@@ -258,27 +263,27 @@ function MetricsBreakdown({
             open && 'rotate-180',
           )}
         />
-        <span>breakdown</span>
+        <span>{t('bottomToolbar.breakdown')}</span>
       </button>
       {open && (
         <div className="absolute bottom-full right-0 mb-1 z-30 min-w-[280px] rounded-md border border-border-strong bg-bg-elevated shadow-xl shadow-black/40 overflow-hidden">
           <div className="px-3 py-1.5 text-[10px] uppercase tracking-widest text-zinc-400 font-mono font-semibold border-b border-border">
-            metrics by role
+            {t('bottomToolbar.metrics.heading')}
           </div>
           <table className="w-full text-[10px] font-mono">
             <thead className="text-zinc-500">
               <tr>
-                <th className="px-3 py-1 text-left font-normal">role</th>
-                <th className="px-3 py-1 text-right font-normal">cost</th>
-                <th className="px-3 py-1 text-right font-normal">turns</th>
-                <th className="px-3 py-1 text-right font-normal">last</th>
+                <th className="px-3 py-1 text-left font-normal">{t('bottomToolbar.metrics.col.role')}</th>
+                <th className="px-3 py-1 text-right font-normal">{t('bottomToolbar.metrics.col.cost')}</th>
+                <th className="px-3 py-1 text-right font-normal">{t('bottomToolbar.metrics.col.turns')}</th>
+                <th className="px-3 py-1 text-right font-normal">{t('bottomToolbar.metrics.col.last')}</th>
               </tr>
             </thead>
             <tbody>
               {activeRows.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-3 py-2 text-center text-zinc-500 italic">
-                    no role activity yet
+                    {t('bottomToolbar.metrics.noActivity')}
                   </td>
                 </tr>
               ) : (
@@ -323,20 +328,21 @@ function MetricsBreakdown({
  * + bg accent at 5+ to nudge the operator to scan the audit log.
  */
 function FailureBadge({ rollup }: { rollup: SessionMetricsRollup | null }) {
+  const { t, plural } = useTranslation();
   const f = rollup?.failures;
   const total = f?.total ?? 0;
   if (total === 0) {
     return (
       <Badge
         icon={<AlertOctagon size={10} />}
-        label="0 fail"
+        label={t('bottomToolbar.failureBadge.none')}
         color="text-zinc-500"
-        title="No classified failures this session — Phase 7 catalogue."
+        title={t('bottomToolbar.failureBadge.none.title')}
       />
     );
   }
   const tooltip =
-    `${total} classified failure${total === 1 ? '' : 's'} this session:\n` +
+    plural('bottomToolbar.failureBadge.tooltip', total, { total }) + '\n' +
     Object.entries(f?.byCode ?? {})
       .sort((a, b) => b[1] - a[1])
       .map(([code, n]) => `  • ${code}: ${n}`)
@@ -346,7 +352,7 @@ function FailureBadge({ rollup }: { rollup: SessionMetricsRollup | null }) {
   return (
     <Badge
       icon={<AlertOctagon size={10} />}
-      label={`${total} fail`}
+      label={t('bottomToolbar.failureBadge.count', { total })}
       color={tone}
       bg={bg}
       title={tooltip}
@@ -372,6 +378,7 @@ function agentCostAccent(agent: string): string {
  * expected and informational. Click the title attribute for context.
  */
 function ContractBadge({ rollup }: { rollup: SessionMetricsRollup | null }) {
+  const { t } = useTranslation();
   const c = rollup?.phaseContract;
   if (!c || c.distinctFilenames === 0) {
     return (
@@ -379,7 +386,7 @@ function ContractBadge({ rollup }: { rollup: SessionMetricsRollup | null }) {
         icon={<CheckCircle2 size={10} />}
         label="—"
         color="text-zinc-500"
-        title="No phase docs validated this session yet"
+        title={t('bottomToolbar.contractBadge.none.title')}
       />
     );
   }
@@ -393,14 +400,14 @@ function ContractBadge({ rollup }: { rollup: SessionMetricsRollup | null }) {
   return (
     <Badge
       icon={<CheckCircle2 size={10} />}
-      label={`${pct}% first-pass`}
+      label={t('bottomToolbar.contractBadge.label', { pct })}
       color={accent}
-      title={
-        `Phase-contract first-pass rate: ${pct}% ` +
-        `(${c.distinctFilenames} doc${c.distinctFilenames === 1 ? '' : 's'} validated, ` +
-        `${c.totalAttempts} total attempt${c.totalAttempts === 1 ? '' : 's'}, ` +
-        `${c.overrides} override${c.overrides === 1 ? '' : 's'})`
-      }
+      title={t('bottomToolbar.contractBadge.title', {
+        pct,
+        distinctFilenames: c.distinctFilenames,
+        totalAttempts: c.totalAttempts,
+        overrides: c.overrides,
+      })}
     />
   );
 }
@@ -447,11 +454,15 @@ interface Activity {
   pulse: boolean;
 }
 
-function computeActivity(meta: SessionMeta, busy: boolean): Activity {
+function computeActivity(
+  meta: SessionMeta,
+  busy: boolean,
+  t: (key: TranslationKey) => string,
+): Activity {
   if (meta.supActive) {
     return {
       icon: <Activity size={10} />,
-      label: 'sup running',
+      label: t('bottomToolbar.activity.supRunning'),
       color: 'text-cyan-300',
       bg: 'bg-cyan-950/40',
       pulse: true,
@@ -460,7 +471,7 @@ function computeActivity(meta: SessionMeta, busy: boolean): Activity {
   if (meta.devActive) {
     return {
       icon: <Activity size={10} />,
-      label: 'dev running',
+      label: t('bottomToolbar.activity.devRunning'),
       color: 'text-amber-300',
       bg: 'bg-amber-950/40',
       pulse: true,
@@ -469,14 +480,14 @@ function computeActivity(meta: SessionMeta, busy: boolean): Activity {
   if (busy) {
     return {
       icon: <Activity size={10} />,
-      label: 'busy',
+      label: t('bottomToolbar.activity.busy'),
       color: 'text-zinc-300',
       pulse: true,
     };
   }
   return {
     icon: <Pause size={10} />,
-    label: 'idle',
+    label: t('bottomToolbar.activity.idle'),
     color: 'text-zinc-500',
     pulse: false,
   };

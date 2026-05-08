@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { AlertTriangle, TerminalSquare, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { api } from '@/lib/api';
+import { useTranslation } from '../lib/i18n';
 import type { ScriptProposal } from '@/lib/types';
 
 /**
@@ -40,6 +41,7 @@ export function ScriptProposalToast({
   /** Reveal the full Scripts panel (right rail) — used by "Review in panel". */
   onOpenPanel: () => void;
 }) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<'view' | 'reject-form'>('view');
   const [approveNotes, setApproveNotes] = useState('');
   const [rejectReason, setRejectReason] = useState('');
@@ -83,7 +85,7 @@ export function ScriptProposalToast({
 
   const handleReject = async () => {
     if (rejectReason.trim().length === 0) {
-      setError('Reject requires a reason — sup needs to know what to fix.');
+      setError(t('scriptProposal.error.rejectRequiresReason'));
       return;
     }
     setPending('reject');
@@ -125,7 +127,7 @@ export function ScriptProposalToast({
               id="script-proposal-title"
               className="text-[15px] font-mono font-semibold text-amber-100"
             >
-              Script proposal — needs your review
+              {t('scriptProposal.title')}
             </h2>
             <div className="flex items-center gap-2 mt-1">
               <TerminalSquare size={11} className="text-amber-400 shrink-0" />
@@ -133,7 +135,7 @@ export function ScriptProposalToast({
                 {proposal.slug}.sh
               </code>
               <span className="text-[10px] font-mono text-amber-400/70">
-                · proposed by {proposal.proposedBy}
+                {t('scriptProposal.proposedBy', { proposedBy: proposal.proposedBy })}
               </span>
             </div>
           </div>
@@ -142,8 +144,8 @@ export function ScriptProposalToast({
             onClick={onClose}
             disabled={pending !== null}
             className="text-amber-400/70 hover:text-amber-100 w-7 h-7 flex items-center justify-center rounded hover:bg-amber-900/40 disabled:opacity-40"
-            aria-label="dismiss"
-            title="Review later (Esc)"
+            aria-label={t('common.dismiss')}
+            title={t('scriptProposal.dismiss.title')}
           >
             <X size={14} />
           </button>
@@ -153,7 +155,7 @@ export function ScriptProposalToast({
         <div className="flex-1 overflow-y-auto scrollbar-thin px-5 py-4 space-y-4">
           <section>
             <h3 className="text-[10px] uppercase tracking-widest font-mono text-zinc-500 mb-1.5">
-              Reason
+              {t('scriptProposal.section.reason')}
             </h3>
             <p className="text-[12px] leading-relaxed font-mono text-zinc-200 whitespace-pre-wrap break-words">
               {proposal.reason}
@@ -161,7 +163,7 @@ export function ScriptProposalToast({
           </section>
           <section>
             <h3 className="text-[10px] uppercase tracking-widest font-mono text-zinc-500 mb-1.5">
-              Script body
+              {t('scriptProposal.section.scriptBody')}
             </h3>
             <pre className="text-[11px] leading-relaxed font-mono text-zinc-100 whitespace-pre-wrap break-words bg-bg-subtle border border-border rounded p-3 max-h-[240px] overflow-y-auto scrollbar-thin">
 {proposal.body}
@@ -180,7 +182,7 @@ export function ScriptProposalToast({
                 type="text"
                 value={approveNotes}
                 onChange={(e) => setApproveNotes(e.target.value)}
-                placeholder="Optional approval note (e.g. 'tested locally')"
+                placeholder={t('scriptProposal.approveNote.placeholder')}
                 disabled={pending !== null}
                 className="w-full bg-bg-subtle border border-border rounded-md px-3 py-1.5 text-[12px] font-mono text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-cyan-600 disabled:opacity-50"
               />
@@ -191,7 +193,7 @@ export function ScriptProposalToast({
                   disabled={pending !== null}
                   className="text-[11px] font-mono text-zinc-400 hover:text-zinc-100 px-2 py-1.5 disabled:opacity-50"
                 >
-                  Review later
+                  {t('scriptProposal.reviewLater')}
                 </button>
                 <span className="flex-1" />
                 <button
@@ -200,7 +202,7 @@ export function ScriptProposalToast({
                   disabled={pending !== null}
                   className="text-[11px] font-mono px-3 py-1.5 rounded border border-rose-800/50 bg-rose-950/30 text-rose-200 hover:bg-rose-950/60 disabled:opacity-50"
                 >
-                  Reject…
+                  {t('scriptProposal.reject')}
                 </button>
                 <button
                   type="button"
@@ -213,7 +215,7 @@ export function ScriptProposalToast({
                       : 'border-emerald-600 bg-emerald-700 text-white hover:bg-emerald-600',
                   )}
                 >
-                  {pending === 'approve' ? 'approving…' : 'Approve & save'}
+                  {pending === 'approve' ? t('scriptProposal.approve.pending') : t('scriptProposal.approve.idle')}
                 </button>
               </div>
             </>
@@ -222,7 +224,7 @@ export function ScriptProposalToast({
               <textarea
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
-                placeholder="Why are you rejecting? Sup will see this verbatim."
+                placeholder={t('scriptProposal.rejectForm.placeholder')}
                 disabled={pending !== null}
                 rows={3}
                 autoFocus
@@ -238,7 +240,7 @@ export function ScriptProposalToast({
                   disabled={pending !== null}
                   className="text-[11px] font-mono text-zinc-400 hover:text-zinc-100 px-2 py-1.5 disabled:opacity-50"
                 >
-                  ← back
+                  {t('common.back')}
                 </button>
                 <span className="flex-1" />
                 <button
@@ -252,7 +254,7 @@ export function ScriptProposalToast({
                       : 'border-zinc-700 bg-zinc-900/40 text-zinc-600 cursor-not-allowed',
                   )}
                 >
-                  {pending === 'reject' ? 'rejecting…' : 'Confirm reject'}
+                  {pending === 'reject' ? t('scriptProposal.confirmReject.pending') : t('scriptProposal.confirmReject.idle')}
                 </button>
               </div>
             </>

@@ -11,6 +11,7 @@ import {
   Settings,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { useTranslation } from '../lib/i18n';
 import {
   api,
   type ProjectTree,
@@ -33,6 +34,7 @@ import { FilePreviewModal } from './file-preview-modal';
  * Sidebar state is component-local — toggled from the rail icon.
  */
 export function FileSidebar({ sessionId }: { sessionId: string }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(true);
   const [previewPath, setPreviewPath] = useState<string | null>(null);
   // Manual refresh — increments to trigger FilesTab's useEffect.
@@ -61,7 +63,7 @@ export function FileSidebar({ sessionId }: { sessionId: string }) {
           <button
             type="button"
             onClick={() => setExpanded(!expanded)}
-            title={expanded ? 'collapse files' : 'expand files'}
+            title={expanded ? t('fileSidebar.collapse') : t('fileSidebar.expand')}
             className={cn(
               'w-12 py-1 rounded flex flex-col items-center justify-center gap-0.5 transition-colors',
               expanded
@@ -71,7 +73,7 @@ export function FileSidebar({ sessionId }: { sessionId: string }) {
           >
             {expanded ? <FolderOpen size={15} /> : <Folder size={15} />}
             <span className="text-[9px] font-mono uppercase tracking-wide leading-none">
-              files
+              {t('fileSidebar.label')}
             </span>
           </button>
         </div>
@@ -79,14 +81,14 @@ export function FileSidebar({ sessionId }: { sessionId: string }) {
           <div className="flex-1 flex flex-col bg-zinc-900/70 border-r-2 border-border-strong min-w-0">
             <div className="h-7 flex items-center gap-2 px-2.5 border-b-2 border-border-strong bg-zinc-900">
               <span className="flex-1 text-[10px] font-mono uppercase tracking-widest text-zinc-300 font-semibold">
-                files
+                {t('fileSidebar.label')}
               </span>
               <button
                 type="button"
                 onClick={handleRefresh}
                 disabled={refreshing}
-                title="Refresh file tree"
-                aria-label="refresh files"
+                title={t('fileSidebar.refresh')}
+                aria-label={t('fileSidebar.refresh.ariaLabel')}
                 className="text-zinc-500 hover:text-zinc-200 disabled:opacity-50 transition-colors"
               >
                 <RefreshCw
@@ -126,6 +128,7 @@ function FilesTab({
   refreshKey: number;
   onPreview: (path: string) => void;
 }) {
+  const { t } = useTranslation();
   const [tree, setTree] = useState<ProjectTree | null>(null);
   const [error, setError] = useState<string | null>(null);
   // Trigger a re-fetch whenever an agent writes/edits a file or sup
@@ -187,11 +190,11 @@ function FilesTab({
     <>
       {error && <div className="p-2 text-[10px] text-red-400 italic">{error}</div>}
       {!tree && !error && (
-        <div className="p-2 text-[10px] text-zinc-500 italic">loading…</div>
+        <div className="p-2 text-[10px] text-zinc-500 italic">{t('common.loading')}</div>
       )}
       {tree?.groups.length === 0 && (
         <div className="p-2 text-[10px] text-zinc-500 italic">
-          no project files found.
+          {t('fileSidebar.noFiles')}
         </div>
       )}
       {tree?.groups.map((g, i) => (

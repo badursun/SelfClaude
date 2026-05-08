@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useTranslation } from '@/lib/i18n';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { TabBar } from '@/components/tab-bar';
 import { StatusBar } from '@/components/status-bar';
@@ -41,6 +42,7 @@ const RIGHT_TAB_VALUES = new Set<RightTab>([
 ]);
 
 export default function SessionPage() {
+  const { t } = useTranslation();
   const params = useParams<{ id: string }>();
   const id = params.id;
   const router = useRouter();
@@ -175,7 +177,7 @@ export default function SessionPage() {
     const sub = subscribeSession(
       id,
       (event) => applyEvent(id, event),
-      () => setError('Lost connection (will retry automatically)'),
+      () => setError(t('session.error.lostConnection')),
     );
     return () => {
       active = false;
@@ -310,14 +312,14 @@ export default function SessionPage() {
           onClick={() => router.push('/')}
           className="px-3 py-1 text-sm rounded border border-border hover:bg-bg-elevated"
         >
-          ← Back to projects
+          {t('session.backToProjects')}
         </button>
       </div>
     );
   }
 
   if (!session) {
-    return <div className="p-8 text-zinc-500">Loading session…</div>;
+    return <div className="p-8 text-zinc-500">{t('session.loading')}</div>;
   }
 
   return (

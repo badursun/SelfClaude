@@ -7,6 +7,7 @@ import {
   Check,
   Copy,
   FileText,
+  Globe,
   RotateCcw,
   Save,
   Settings as SettingsIcon,
@@ -14,6 +15,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { api, type SystemPromptInfo } from '@/lib/api';
+import { useTranslation, type TranslationKey } from '../lib/i18n';
+import { LanguageSwitcher } from './language-switcher';
 
 /**
  * Global settings modal. Today its single section is the agent
@@ -31,11 +34,12 @@ import { api, type SystemPromptInfo } from '@/lib/api';
  * actions are per-agent — selecting a different agent doesn't lose
  * unsaved edits to the current one (state is held per-agent).
  */
-type SettingsTab = 'prompts' | 'mcp-tools';
+type SettingsTab = 'prompts' | 'mcp-tools' | 'language';
 
 export function SettingsModal({ onClose }: { onClose: () => void }) {
   const params = useParams<{ id?: string }>();
   const sessionId = params?.id ?? null;
+  const { t } = useTranslation();
   const [tab, setTab] = useState<SettingsTab>('prompts');
   const [prompts, setPrompts] = useState<SystemPromptInfo[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -96,7 +100,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
             : row,
         ),
       );
-      setSavedNotice(`${active.label} saved.`);
+      setSavedNotice(t('settings.prompts.savedNotice', { label: active.label }));
       setTimeout(() => setSavedNotice(null), 2000);
     } catch (e) {
       setError((e as Error).message);
@@ -108,7 +112,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
   const handleReset = async () => {
     if (!active || savingAgent) return;
     if (active.source !== 'override') return;
-    if (!confirm(`Reset ${active.label} to bundled default? This deletes your override.`)) return;
+    if (!confirm(t('settings.prompts.confirmReset', { label: active.label }))) return;
     setSavingAgent(active.agent);
     setError(null);
     try {
@@ -121,7 +125,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
         ),
       );
       setDrafts((d) => ({ ...d, [active.agent]: active.defaultContent }));
-      setSavedNotice(`${active.label} reset to default.`);
+      setSavedNotice(t('settings.prompts.resetNotice', { label: active.label }));
       setTimeout(() => setSavedNotice(null), 2000);
     } catch (e) {
       setError((e as Error).message);
@@ -142,21 +146,27 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
         {/* Header */}
         <div className="flex items-center gap-2 px-4 py-3 border-b-2 border-border-strong bg-bg-elevated">
           <SettingsIcon size={16} className="text-cyan-400" />
-          <h2 className="text-sm font-semibold text-zinc-100">Settings</h2>
+          <h2 className="text-sm font-semibold text-zinc-100">{t('settings.title')}</h2>
           <div className="ml-3 flex items-center gap-1">
             <SettingsTabButton
               active={tab === 'prompts'}
               icon={<FileText size={12} />}
-              label="Agent prompts"
+              label={t('settings.tab.agentPrompts')}
               onClick={() => setTab('prompts')}
             />
             <SettingsTabButton
               active={tab === 'mcp-tools'}
               icon={<Activity size={12} />}
-              label="MCP tools"
+              label={t('settings.tab.mcpTools')}
               onClick={() => setTab('mcp-tools')}
               disabled={!sessionId}
-              tooltip={!sessionId ? 'Open a session to view MCP telemetry' : undefined}
+              tooltip={!sessionId ? t('settings.tab.mcpTools.disabled') : undefined}
+            />
+            <SettingsTabButton
+              active={tab === 'language'}
+              icon={<Globe size={12} />}
+              label={t('settings.tab.language')}
+              onClick={() => setTab('language')}
             />
           </div>
           <span className="flex-1" />
@@ -168,7 +178,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
           <button
             onClick={onClose}
             className="text-zinc-400 hover:text-zinc-100 p-0.5"
-            aria-label="close settings"
+            aria-label={t('settings.close')}
           >
             <X size={16} />
           </button>
@@ -177,12 +187,17 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
         {tab === 'mcp-tools' && sessionId && (
           <McpToolsTab sessionId={sessionId} />
         )}
+        {tab === 'language' && (
+          <div className="flex-1 flex items-center justify-center p-8">
+            <LanguageSwitcher />
+          </div>
+        )}
         {tab === 'prompts' && (
         <div className="flex-1 flex min-h-0">
           {/* Left rail */}
           <aside className="w-[200px] shrink-0 border-r-2 border-border-strong bg-bg-subtle overflow-y-auto scrollbar-thin">
             <div className="px-3 py-2 text-[10px] uppercase tracking-widest text-zinc-500 font-mono font-semibold">
-              Agent prompts
+              {t('settings.prompts.railHeading')}
             </div>
             {!prompts && !error && (
               <div className="p-3 text-[11px] text-zinc-500 italic">loading…</div>
@@ -213,14 +228,14 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                   {p.source === 'override' && (
                     <span
                       className="text-[9px] uppercase tracking-wider px-1 rounded bg-amber-900/40 text-amber-300"
-                      title="custom override saved"
+                      title={t('settings.prompts.badge.custom.title')}
                     >
-                      custom
+                      {t('settings.prompts.badge.custom')}
                     </span>
                   )}
                   {drafts[p.agent] !== undefined &&
                     drafts[p.agent] !== p.currentContent && (
-                      <span className="text-amber-400 text-xs" title="unsaved changes">
+                      <span className="text-amber-400 text-xs" title={t('settings.prompts.badge.unsaved.title')}>
                         ●
                       </span>
                     )}
@@ -242,13 +257,12 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                       {active.label}
                       <span className="ml-2 text-[10px] text-zinc-500">
                         {active.source === 'override'
-                          ? `(custom — overrides bundled default)`
-                          : `(bundled default)`}
+                          ? t('settings.prompts.source.override')
+                          : t('settings.prompts.source.default')}
                       </span>
                     </div>
                     <div className="text-[10px] text-zinc-500 mt-0.5">
-                      {draft.length.toLocaleString()} chars · saves to{' '}
-                      <code>~/.selfclaude/system-prompts/{active.agent}.md</code>
+                      {t('settings.prompts.chars', { charCount: draft.length.toLocaleString(), filePath: `~/.selfclaude/system-prompts/${active.agent}.md` })}
                     </div>
                   </div>
                   <CopyButton text={draft} />
@@ -257,7 +271,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                       onClick={handleReset}
                       disabled={!!savingAgent}
                       className="flex items-center gap-1 px-2 py-1 text-[11px] rounded border border-border hover:bg-bg-elevated text-zinc-300 disabled:opacity-50"
-                      title="delete the override and revert to bundled default"
+                      title={t('settings.prompts.resetButton.title')}
                     >
                       <RotateCcw size={11} />
                       reset
@@ -272,7 +286,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
                         ? 'bg-cyan-600 hover:bg-cyan-500 border-cyan-700 text-white'
                         : 'bg-zinc-800 text-zinc-500 cursor-not-allowed border-zinc-700',
                     )}
-                    title="save (⌘S)"
+                    title={t('settings.prompts.saveTitle')}
                   >
                     <Save size={11} />
                     {savingAgent === active.agent ? 'saving…' : 'save'}
@@ -290,7 +304,7 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
             )}
             {!active && !error && (
               <div className="flex-1 flex items-center justify-center text-zinc-500 text-[11px] italic">
-                Select an agent on the left to edit its system prompt.
+                {t('settings.prompts.emptyState')}
               </div>
             )}
           </div>
@@ -343,6 +357,7 @@ function SettingsTabButton({
  * to peek, doesn't watch it live).
  */
 function McpToolsTab({ sessionId }: { sessionId: string }) {
+  const { t } = useTranslation();
   const [data, setData] = useState<{
     tools: Record<
       string,
@@ -387,42 +402,14 @@ function McpToolsTab({ sessionId }: { sessionId: string }) {
   // even when it's never been called so the operator sees zero-usage
   // tools (a signal that the prompt directive isn't landing).
   const KNOWN_TOOLS: { name: string; description: string }[] = [
-    {
-      name: 'ask_user',
-      description:
-        'Ask the operator a clarifying question. Bundle multiple as a numbered list in one call.',
-    },
-    {
-      name: 'request_user_approval',
-      description:
-        'Request operator approval before destructive / scope-changing actions.',
-    },
-    {
-      name: 'write_phase_doc',
-      description: 'Write a phase brief into docs/phases/.',
-    },
-    {
-      name: 'register_phase_items',
-      description:
-        'Sup-only. Declare the DoD checklist for a phase (Documentation step).',
-    },
-    {
-      name: 'propose_item_done',
-      description:
-        'Any agent. Mark a tracker item as proposed-done; sup reviews next turn.',
-    },
-    {
-      name: 'confirm_item_done',
-      description: 'Sup-only. Confirm a proposed item after verification.',
-    },
-    {
-      name: 'reject_item_done',
-      description: 'Sup-only. Send a proposed item back to pending with a reason.',
-    },
-    {
-      name: 'apply_agent_dna',
-      description: 'Sup-only. Apply a bundled DNA template to a specific agent.',
-    },
+    { name: 'ask_user', description: t('settings.mcp.toolDescriptions.askUser') },
+    { name: 'request_user_approval', description: t('settings.mcp.toolDescriptions.requestApproval') },
+    { name: 'write_phase_doc', description: t('settings.mcp.toolDescriptions.writePhaseDoc') },
+    { name: 'register_phase_items', description: t('settings.mcp.toolDescriptions.registerPhaseItems') },
+    { name: 'propose_item_done', description: t('settings.mcp.toolDescriptions.proposeItemDone') },
+    { name: 'confirm_item_done', description: t('settings.mcp.toolDescriptions.confirmItemDone') },
+    { name: 'reject_item_done', description: t('settings.mcp.toolDescriptions.rejectItemDone') },
+    { name: 'apply_agent_dna', description: t('settings.mcp.toolDescriptions.applyAgentDna') },
   ];
 
   const merged = KNOWN_TOOLS.map((t) => ({
@@ -436,13 +423,13 @@ function McpToolsTab({ sessionId }: { sessionId: string }) {
       <aside className="w-[260px] shrink-0 border-r-2 border-border-strong bg-bg-subtle overflow-y-auto scrollbar-thin">
         <div className="px-3 py-2 border-b border-border flex items-center gap-2">
           <span className="flex-1 text-[10px] uppercase tracking-widest text-zinc-500 font-mono font-semibold">
-            MCP tools
+            {t('settings.mcp.railHeading')}
           </span>
           <button
             type="button"
             onClick={() => setRefreshKey((k) => k + 1)}
             className="text-[10px] text-zinc-500 hover:text-zinc-200"
-            title="refresh"
+            title={t('settings.mcp.refresh')}
           >
             ↻
           </button>
@@ -476,7 +463,7 @@ function McpToolsTab({ sessionId }: { sessionId: string }) {
                     </span>
                     {total === 0 ? (
                       <span className="text-[9px] uppercase tracking-wide text-zinc-600">
-                        unused
+                        {t('settings.mcp.badge.unused')}
                       </span>
                     ) : (
                       <span className="text-[10px] tabular-nums font-mono text-zinc-400">
@@ -505,7 +492,7 @@ function McpToolsTab({ sessionId }: { sessionId: string }) {
           />
         ) : (
           <div className="flex-1 flex items-center justify-center text-[11px] italic text-zinc-500">
-            Select a tool on the left to see its usage detail.
+            {t('settings.mcp.emptyState')}
           </div>
         )}
       </div>
@@ -530,6 +517,7 @@ function McpToolDetail({
     recent: { ts: number; agent: string; success: boolean; message: string }[];
   } | null;
 }) {
+  const { t } = useTranslation();
   const successRate =
     stat && stat.total > 0
       ? Math.round((stat.success / stat.total) * 100)
@@ -550,31 +538,29 @@ function McpToolDetail({
           <div className="p-6">
             <div className="rounded border border-zinc-800 bg-zinc-900/50 px-4 py-3">
               <p className="text-[11px] text-zinc-400 leading-relaxed">
-                <span className="text-zinc-300 font-mono">No calls yet.</span>{' '}
-                If sup should be using this tool but isn't, it's a signal the
-                prompt directive isn't landing — open the Agent prompts tab to
-                inspect / tune the relevant system prompt.
+                <span className="text-zinc-300 font-mono">{t('settings.mcp.noCalls')}</span>{' '}
+                {t('settings.mcp.noCalls.hint')}
               </p>
             </div>
           </div>
         ) : (
           <>
             <div className="grid grid-cols-3 gap-3 p-4 border-b border-border">
-              <Stat label="total" value={stat.total} />
+              <Stat label={t('settings.mcp.stat.total')} value={stat.total} />
               <Stat
-                label="success"
+                label={t('settings.mcp.stat.success')}
                 value={`${stat.success}${successRate !== null ? ` · ${successRate}%` : ''}`}
                 accent="emerald"
               />
               <Stat
-                label="failure"
+                label={t('settings.mcp.stat.failure')}
                 value={stat.failure}
                 accent={stat.failure > 0 ? 'red' : 'zinc'}
               />
             </div>
             <div className="p-4 space-y-1.5">
               <div className="flex items-baseline gap-2 text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-1">
-                <span>recent calls</span>
+                <span>{t('settings.mcp.recentCalls')}</span>
                 <span className="text-zinc-700">·</span>
                 <span>{stat.recent.length}</span>
               </div>
@@ -598,7 +584,7 @@ function McpToolDetail({
                       {r.success ? '✓' : '✗'}
                     </span>
                     <span className="shrink-0 text-zinc-500 tabular-nums w-[80px]">
-                      {formatRelative(r.ts)}
+                      {formatRelative(r.ts, t)}
                     </span>
                     <span className="shrink-0 text-cyan-400">{r.agent}</span>
                     {r.message && (
@@ -644,12 +630,12 @@ function Stat({
   );
 }
 
-function formatRelative(ts: number): string {
+function formatRelative(ts: number, t: (key: TranslationKey, vars?: Record<string, string | number>) => string): string {
   const ms = Date.now() - ts;
-  if (ms < 60_000) return `${Math.floor(ms / 1000)}s ago`;
-  if (ms < 3_600_000) return `${Math.floor(ms / 60_000)}m ago`;
-  if (ms < 86_400_000) return `${Math.floor(ms / 3_600_000)}h ago`;
-  return `${Math.floor(ms / 86_400_000)}d ago`;
+  if (ms < 60_000) return t('settings.mcp.relativeTime.seconds', { sec: Math.floor(ms / 1000) });
+  if (ms < 3_600_000) return t('settings.mcp.relativeTime.minutes', { min: Math.floor(ms / 60_000) });
+  if (ms < 86_400_000) return t('settings.mcp.relativeTime.hours', { hr: Math.floor(ms / 3_600_000) });
+  return t('settings.mcp.relativeTime.days', { day: Math.floor(ms / 86_400_000) });
 }
 
 const AGENT_TEXT_ACCENT: Record<string, string> = {
@@ -667,6 +653,7 @@ const AGENT_TEXT_ACCENT: Record<string, string> = {
  * side with another tool.
  */
 function CopyButton({ text }: { text: string }) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   return (
     <button
@@ -680,7 +667,7 @@ function CopyButton({ text }: { text: string }) {
         }
       }}
       className="flex items-center gap-1 px-2 py-1 text-[11px] rounded border border-border hover:bg-bg-elevated text-zinc-300"
-      title={copied ? 'copied!' : 'copy prompt text'}
+      title={t('settings.mcp.copyPrompt')}
     >
       {copied ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
     </button>

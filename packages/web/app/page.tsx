@@ -12,13 +12,16 @@ import {
   buildDiscoveryBrief,
   type WizardSubmission,
 } from '@/components/new-project-wizard';
+import { LanguageSwitcher } from '@/components/language-switcher';
 import { SelfClaudeLogo } from '@/components/selfclaude-logo';
 import { PinnedList, RecentList, SessionsList } from '@/components/sessions-list';
 import { api } from '@/lib/api';
 import { filterClosing, useClosingTick } from '@/lib/closing-sessions';
+import { useTranslation } from '@/lib/i18n';
 import type { Favorite, RecentEntry, SessionMeta } from '@/lib/types';
 
 export default function Home() {
+  const { t, plural } = useTranslation();
   const [sessions, setSessions] = useState<SessionMeta[]>([]);
   const [favorites, setFavorites] = useState<Favorite[]>([]);
   const [recents, setRecents] = useState<RecentEntry[]>([]);
@@ -203,17 +206,16 @@ export default function Home() {
             <SelfClaudeLogo
               variant="wordmark"
               size="xl"
-              caption="multi-agent orchestration"
+              caption={t('home.caption')}
             />
             <p className="mt-3 text-sm text-zinc-500 max-w-md leading-relaxed">
-              A supervisor + specialist agents working in parallel — you stay
-              in the loop, gating phases and verifying work.
+              {t('home.hero.description')}
             </p>
             {health && (
               <div className="mt-4 flex items-center gap-3 text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
                 <span className="inline-flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  api online
+                  {t('home.status.apiOnline')}
                 </span>
                 <span className="text-zinc-700">·</span>
                 <span>v{health.version}</span>
@@ -221,23 +223,26 @@ export default function Home() {
                 <span>{formatUptime(health.uptime)}</span>
                 <span className="text-zinc-700">·</span>
                 <span>
-                  {health.sessions} session{health.sessions === 1 ? '' : 's'}
+                  {plural('home.status.session', health.sessions)}
                 </span>
                 <span className="text-zinc-700">·</span>
                 <BaselineRatioControl />
               </div>
             )}
           </div>
-          {!loading && (
-            <button
-              type="button"
-              onClick={() => setPicking(true)}
-              className="rounded-md bg-cyan-600 hover:bg-cyan-500 px-4 py-2 text-sm font-medium flex items-center gap-2 shrink-0 shadow-lg shadow-cyan-900/30"
-            >
-              <FolderOpen size={15} />
-              Open Project
-            </button>
-          )}
+          <div className="flex items-center gap-3 shrink-0">
+            <LanguageSwitcher />
+            {!loading && (
+              <button
+                type="button"
+                onClick={() => setPicking(true)}
+                className="rounded-md bg-cyan-600 hover:bg-cyan-500 px-4 py-2 text-sm font-medium flex items-center gap-2 shrink-0 shadow-lg shadow-cyan-900/30"
+              >
+                <FolderOpen size={15} />
+                {t('home.button.openProject')}
+              </button>
+            )}
+          </div>
         </header>
 
         <div className="relative">
@@ -250,7 +255,7 @@ export default function Home() {
                 onClick={() => void refresh()}
                 className="text-xs underline text-red-200 hover:text-white shrink-0"
               >
-                retry
+                {t('common.retry')}
               </button>
             </div>
           )}
@@ -309,6 +314,7 @@ export default function Home() {
  * a centred spinner that hides the upcoming layout.
  */
 function LandingSkeleton() {
+  const { t } = useTranslation();
   return (
     <div className="space-y-6 animate-pulse">
       <div>
@@ -335,7 +341,7 @@ function LandingSkeleton() {
       </div>
       <div className="flex items-center gap-2 text-xs text-zinc-600 pt-2">
         <Loader2 size={12} className="animate-spin" />
-        <span>loading sessions…</span>
+        <span>{t('home.loading.sessions')}</span>
       </div>
     </div>
   );
@@ -353,6 +359,7 @@ function LandingSkeleton() {
  * tree.
  */
 function EmptyState({ onPick }: { onPick: () => void }) {
+  const { t } = useTranslation();
   const router = useRouter();
   const [demoBusy, setDemoBusy] = useState(false);
   const [demoError, setDemoError] = useState<string | null>(null);
@@ -382,12 +389,10 @@ function EmptyState({ onPick }: { onPick: () => void }) {
           <Sparkles size={18} className="text-cyan-400" />
         </div>
         <h2 className="text-base font-medium text-zinc-100 mb-1">
-          5-minute demo
+          {t('home.demo.title')}
         </h2>
         <p className="text-xs text-zinc-500 leading-relaxed mb-4 flex-1">
-          Watch the supervisor delegate to the developer to build a tiny
-          portfolio HTML file. No prompt to write, no setup. End of run:
-          one-click open in your browser.
+          {t('home.demo.description')}
         </p>
         {demoError && (
           <div className="mb-3 text-[11px] text-rose-300 bg-rose-950/30 border border-rose-900/40 rounded px-2 py-1">
@@ -403,12 +408,12 @@ function EmptyState({ onPick }: { onPick: () => void }) {
           {demoBusy ? (
             <>
               <Loader2 size={14} className="animate-spin" />
-              Spinning up demo…
+              {t('home.demo.button.loading')}
             </>
           ) : (
             <>
               <Sparkles size={14} />
-              Try the demo
+              {t('home.demo.button.start')}
             </>
           )}
         </button>
@@ -418,12 +423,10 @@ function EmptyState({ onPick }: { onPick: () => void }) {
           <FolderOpen size={18} className="text-zinc-300" />
         </div>
         <h2 className="text-base font-medium text-zinc-100 mb-1">
-          Real project
+          {t('home.realProject.title')}
         </h2>
         <p className="text-xs text-zinc-500 leading-relaxed mb-4 flex-1">
-          Already have a folder you want to work on? Pick it and the
-          wizard will set up SelfClaude in your project — fresh build or
-          discover-existing.
+          {t('home.realProject.description')}
         </p>
         <button
           type="button"
@@ -431,7 +434,7 @@ function EmptyState({ onPick }: { onPick: () => void }) {
           className="inline-flex items-center justify-center gap-2 rounded-md border border-border bg-bg-elevated hover:bg-bg-panel px-4 py-2 text-sm font-medium text-zinc-100"
         >
           <FolderOpen size={14} />
-          Open project folder
+          {t('home.realProject.button')}
         </button>
       </div>
     </div>
@@ -468,6 +471,7 @@ const BASELINE_OPTIONS: { value: number; label: string }[] = [
 ];
 
 function BaselineRatioControl() {
+  const { t } = useTranslation();
   const [value, setValue] = useState<number>(3);
   useEffect(() => {
     const raw = window.localStorage.getItem(BASELINE_KEY);
@@ -485,9 +489,9 @@ function BaselineRatioControl() {
   return (
     <span
       className="inline-flex items-center gap-1"
-      title="Multiplier used to estimate time saved on pinned project cards. The number is configurable and explicitly labelled — it's NOT a measured value, just a comparison against your chosen baseline."
+      title={t('home.baseline.tooltip')}
     >
-      <span>estimate</span>
+      <span>{t('home.baseline.estimate')}</span>
       <select
         value={value}
         onChange={onChange}
@@ -495,7 +499,7 @@ function BaselineRatioControl() {
       >
         {BASELINE_OPTIONS.map((opt) => (
           <option key={opt.value} value={opt.value}>
-            {opt.label}
+            {opt.value === 1 ? t('home.baseline.off') : opt.label}
           </option>
         ))}
       </select>

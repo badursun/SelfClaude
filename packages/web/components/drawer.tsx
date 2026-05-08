@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { HelpCircle, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { useTranslation } from '../lib/i18n';
 import type { PendingQuestion } from '@/lib/types';
 
 /**
@@ -34,6 +35,7 @@ export function Drawer({
   question: PendingQuestion | null;
   onAnswer: (questionId: string, answer: string) => void;
 }) {
+  const { t } = useTranslation();
   const parsed = useMemo(() => parseQuestions(question?.question ?? ''), [question?.question]);
   const isMulti = parsed.questions.length >= 2;
 
@@ -74,7 +76,7 @@ export function Drawer({
     return parsed.questions
       .map((q, i) => {
         const ans = drafts[i]?.trim() ?? '';
-        return `${q.num}. ${ans.length > 0 ? ans : '(no answer)'}`;
+        return `${q.num}. ${ans.length > 0 ? ans : t('drawer.noAnswer')}`;
       })
       .join('\n');
   };
@@ -112,15 +114,15 @@ export function Drawer({
         <header className="px-5 py-3 border-b border-yellow-700/40 bg-yellow-950/30 flex items-center gap-2">
           <HelpCircle size={16} className="text-yellow-400 shrink-0" />
           <h2 className="flex-1 text-[13px] font-mono font-semibold text-yellow-200">
-            Supervisor asks
+            {t('drawer.title')}
             {isMulti && (
               <span className="ml-2 text-[10px] uppercase tracking-widest font-mono text-yellow-400">
-                · {parsed.questions.length} questions
+                {t('drawer.questionCount', { count: parsed.questions.length })}
               </span>
             )}
             {question.urgency === 'high' && (
               <span className="ml-2 text-[10px] uppercase tracking-widest font-bold text-red-400">
-                ⚠ urgent
+                {t('drawer.urgent')}
               </span>
             )}
           </h2>
@@ -128,8 +130,8 @@ export function Drawer({
             type="button"
             onClick={() => onAnswer(question.id, '')}
             className="text-yellow-500/60 hover:text-yellow-200 w-7 h-7 flex items-center justify-center rounded hover:bg-yellow-900/30"
-            aria-label="dismiss"
-            title="dismiss (sends empty answer)"
+            aria-label={t('common.dismiss')}
+            title={t('drawer.dismiss.title')}
           >
             <X size={14} />
           </button>
@@ -185,7 +187,7 @@ export function Drawer({
                           handleSubmit();
                         }
                       }}
-                      placeholder={`Answer for Q${q.num}…`}
+                      placeholder={t('drawer.placeholder.multi', { num: q.num })}
                       rows={2}
                       className="w-full bg-bg-subtle border border-border rounded-md px-3 py-2 text-[12px] font-mono text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-yellow-600 resize-none leading-relaxed"
                     />
@@ -210,22 +212,24 @@ export function Drawer({
                   handleSubmit();
                 }
               }}
-              placeholder="Type your answer…"
+              placeholder={t('drawer.placeholder.single')}
               rows={3}
               className="w-full bg-bg-subtle border border-border rounded-md px-3 py-2 text-[12px] font-mono text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-yellow-600 resize-none leading-relaxed"
             />
           )}
           <div className="flex items-center justify-between gap-3">
             <span className="text-[10px] font-mono text-zinc-600">
-              <kbd className="px-1 bg-bg-elevated rounded text-zinc-400">⌘↵</kbd> submit
+              <kbd className="px-1 bg-bg-elevated rounded text-zinc-400">{t('drawer.shortcut.submit')}</kbd> {t('drawer.shortcut.submitLabel')}
               <span className="mx-2 text-zinc-700">·</span>
-              <kbd className="px-1 bg-bg-elevated rounded text-zinc-400">esc</kbd> dismiss
+              <kbd className="px-1 bg-bg-elevated rounded text-zinc-400">{t('drawer.shortcut.esc')}</kbd> {t('drawer.shortcut.dismissLabel')}
               {isMulti && !allFilled && (
                 <>
                   <span className="mx-2 text-zinc-700">·</span>
                   <span className="text-amber-500">
-                    {drafts.filter((d) => d.trim().length > 0).length}/
-                    {parsed.questions.length} answered
+                    {t('drawer.progress', {
+                      answered: drafts.filter((d) => d.trim().length > 0).length,
+                      total: parsed.questions.length,
+                    })}
                   </span>
                 </>
               )}
@@ -241,7 +245,7 @@ export function Drawer({
                   : 'border-zinc-700 bg-zinc-900/40 text-zinc-600 cursor-not-allowed',
               )}
             >
-              Submit answer{isMulti ? 's' : ''}
+              {isMulti ? t('drawer.submit.multi') : t('drawer.submit.single')}
             </button>
           </div>
         </footer>

@@ -15,6 +15,7 @@ import {
   useClosingTick,
 } from '@/lib/closing-sessions';
 import { SelfClaudeLogo } from './selfclaude-logo';
+import { useTranslation } from '../lib/i18n';
 
 const POLL_MS = 4_000;
 // Tombstone lives well past the destroy round-trip. destroySession
@@ -24,6 +25,7 @@ const POLL_MS = 4_000;
 const TOMBSTONE_MS = 30_000;
 
 export function TabBar() {
+  const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
   const [sessions, setSessions] = useState<SessionMeta[]>([]);
@@ -84,8 +86,8 @@ export function TabBar() {
           'px-3 flex items-center border-r border-border hover:bg-bg-elevated/60 transition-colors',
           pathname === '/' && 'bg-bg-panel',
         )}
-        aria-label="home — SelfClaude"
-        title="SelfClaude home"
+        aria-label={t('tabBar.home.ariaLabel')}
+        title={t('tabBar.home.title')}
       >
         <SelfClaudeLogo variant="wordmark" size="xs" />
       </Link>
@@ -103,7 +105,7 @@ export function TabBar() {
       <Link
         href="/"
         className="px-3 flex items-center text-zinc-400 hover:text-zinc-200 border-r border-border"
-        title="new project"
+        title={t('tabBar.newProject')}
       >
         <Plus size={14} />
       </Link>
@@ -128,6 +130,7 @@ function Tab({
   closing: boolean;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   // Close button MUST live as a sibling of the Link, not nested inside
   // it — Next.js intercepts navigation at a higher level than React's
   // synthetic-event preventDefault, so a nested button click would
@@ -154,7 +157,7 @@ function Tab({
         <Folder size={12} className="shrink-0 text-zinc-500" />
         <span className="truncate max-w-[160px]">{session.label}</span>
         {closing ? (
-          <span className="text-[9px] uppercase tracking-wider text-rose-400 shrink-0">closing…</span>
+          <span className="text-[9px] uppercase tracking-wider text-rose-400 shrink-0">{t('tabBar.closing')}</span>
         ) : (
           session.busy && <span className="text-xs text-cyan-400 shrink-0">●</span>
         )}
@@ -183,8 +186,8 @@ function Tab({
           // resolves the "X doesn't close" perception.
           active ? 'opacity-90' : 'opacity-0 group-hover:opacity-70 hover:!opacity-100',
         )}
-        aria-label={`close ${session.label}`}
-        title={`Close ${session.label}`}
+        aria-label={t('tabBar.close.ariaLabel', { label: session.label })}
+        title={t('tabBar.close.title', { label: session.label })}
         disabled={closing}
       >
         <X size={13} strokeWidth={2.5} />

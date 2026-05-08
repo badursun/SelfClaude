@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
+import { useTranslation } from '../lib/i18n';
 import {
   ArrowDown,
   Brain,
@@ -64,6 +65,7 @@ export function SupChat({
    */
   initialInput?: string;
 }) {
+  const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
   const { isAtBottom, scrollToBottom } = useStickyBottom(
     ref,
@@ -102,13 +104,13 @@ export function SupChat({
               disabled={loadingHistory}
               className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 hover:text-zinc-100 px-2 py-1 rounded border border-border hover:border-border-strong disabled:opacity-50 disabled:cursor-wait"
             >
-              {loadingHistory ? 'loading…' : 'load older messages'}
+              {loadingHistory ? t('common.loading') : t('supChat.loadOlder')}
             </button>
           </div>
         )}
         {renderItems.length === 0 && (
           <p className="text-xs text-zinc-500 italic">
-            No messages yet. Type below to start a discovery conversation.
+            {t('supChat.empty')}
           </p>
         )}
         {renderItems.map((item, idx) => {
@@ -138,8 +140,8 @@ export function SupChat({
         <button
           onClick={scrollToBottom}
           className="absolute bottom-24 right-4 z-20 rounded-full bg-cyan-600 hover:bg-cyan-500 text-white p-2 shadow-lg shadow-black/40 transition-transform hover:scale-105"
-          aria-label="scroll to bottom"
-          title="scroll to bottom"
+          aria-label={t('supChat.scrollToBottom')}
+          title={t('supChat.scrollToBottom')}
         >
           <ArrowDown size={14} />
         </button>
@@ -166,6 +168,7 @@ function Bubble({
   streaming?: boolean;
   onSelectTool?: (toolUseId: string) => void;
 }) {
+  const { t } = useTranslation();
   // Full-width message rows. Solid teal/navy backgrounds (per operator's
   // request) with no border — high contrast, clear sender separation.
   // Header strip carries the role label on the left + a copy button on
@@ -173,7 +176,7 @@ function Bubble({
   if (entry.type === 'user-message') {
     return (
       <MessageBlock
-        label="you"
+        label={t('supChat.you')}
         labelColor="text-cyan-100"
         bgColor="#00434e"
         copyText={entry.text}
@@ -185,7 +188,7 @@ function Bubble({
   if (entry.type === 'sup-message') {
     return (
       <MessageBlock
-        label="supervisor"
+        label={t('supChat.supervisor')}
         labelColor="text-blue-100"
         bgColor="#192640"
         copyText={entry.text}
@@ -236,11 +239,12 @@ function Bubble({
  * agents pick it up on their next turn.
  */
 function VerdictCard({ id, text }: { id: number; text: string }) {
+  const { t } = useTranslation();
   return (
     <div className="w-full rounded border-l-4 border-red-500 border-r border-y border-red-700/50 bg-red-950/30 px-3 py-2">
       <div className="flex items-center gap-1.5 mb-1">
         <span className="text-[10px] uppercase tracking-widest font-bold text-red-300">
-          🟥 yargısal karar
+          {t('supChat.verdict')}
         </span>
         <span className="text-[10px] text-red-400 font-mono tabular-nums">
           #{id.toString().padStart(3, '0')}
@@ -273,6 +277,7 @@ function MessageBlock({
   copyText: string;
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const handleCopy = async () => {
     try {
@@ -294,8 +299,8 @@ function MessageBlock({
         <button
           onClick={handleCopy}
           className="text-zinc-300 hover:text-white p-1 -m-1 rounded transition-colors"
-          aria-label="copy message"
-          title={copied ? 'copied!' : 'copy message text'}
+          aria-label={t('supChat.copy.ariaLabel')}
+          title={copied ? t('common.copied') : t('supChat.copy.title')}
         >
           {copied ? <Check size={11} className="text-emerald-300" /> : <Copy size={11} />}
         </button>
@@ -310,6 +315,7 @@ function MessageBlock({
  * collapsed; expand to read the model's full chain of thought.
  */
 function ThinkingBubble({ text }: { text: string }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const firstLine = text.split('\n').find((l) => l.trim().length > 0)?.trim() ?? '';
   const preview = firstLine.length > 90 ? `${firstLine.slice(0, 87)}…` : firstLine;
@@ -322,10 +328,10 @@ function ThinkingBubble({ text }: { text: string }) {
       >
         <Brain size={11} className="shrink-0 text-violet-400" />
         <span className="text-[10px] uppercase tracking-widest font-semibold text-violet-300">
-          thinking
+          {t('supChat.thinking')}
         </span>
         <span className="text-[10px] text-violet-500 tabular-nums">
-          ({lineCount} lines)
+          {t('supChat.thinking.lineCount', { count: lineCount })}
         </span>
         {!open && (
           <span className="text-[11px] text-zinc-400 italic font-mono truncate">
@@ -568,6 +574,7 @@ function ToolClusterStrip({
   entries: Array<Extract<ChatLogEntry, { type: 'sup-tool-call' }>>;
   onSelectTool: (toolUseId: string) => void;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const first = entries[0]!;
   const family = getToolFamily(first.name);
@@ -612,7 +619,7 @@ function ToolClusterStrip({
             className="flex-1 min-w-0 truncate text-zinc-500 italic"
             title={lastDetail}
           >
-            …{lastDetail || `${entries.length} consecutive calls`}
+            …{lastDetail || t('supChat.consecutiveCalls', { count: entries.length })}
           </span>
         )}
       </button>

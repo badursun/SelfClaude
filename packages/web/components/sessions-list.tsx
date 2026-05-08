@@ -18,6 +18,7 @@ import {
 import { api, type ProjectMetricsRollup } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import type { Favorite, RecentEntry, SessionMeta } from '@/lib/types';
+import { useTranslation } from '../lib/i18n';
 
 /**
  * Landing-page project lists. Three sections share a visual language
@@ -42,14 +43,15 @@ export function SessionsList({
   pinnedCwds: Set<string>;
   onTogglePin: (cwd: string, label: string) => void;
 }) {
+  const { t } = useTranslation();
   if (sessions.length === 0) return null;
   return (
     <section className="mb-8">
       <SectionHeader
         accent="cyan"
-        label="Active"
+        label={t('sessionsList.active.label')}
         count={sessions.length}
-        hint="live orchestrator sessions"
+        hint={t('sessionsList.active.hint')}
       />
       <div className="space-y-1.5">
         {sessions.map((s) => (
@@ -74,6 +76,7 @@ function ActiveCard({
   pinned: boolean;
   onTogglePin: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="group relative">
       {/* Cyan accent rail on the left — appears on hover, marks the live row. */}
@@ -99,8 +102,8 @@ function ActiveCard({
             onTogglePin();
           }}
           className="p-1.5 rounded text-zinc-500 hover:text-amber-300 hover:bg-bg-elevated"
-          aria-label={pinned ? 'unpin' : 'pin'}
-          title={pinned ? 'Unpin from favorites' : 'Pin to favorites'}
+          aria-label={pinned ? t('sessionsList.unpin.ariaLabel') : t('sessionsList.pin.ariaLabel')}
+          title={pinned ? t('sessionsList.unpin.title') : t('sessionsList.pin.title')}
         >
           {pinned ? (
             <Pin size={13} className="text-amber-400 fill-amber-400" />
@@ -127,14 +130,15 @@ export function PinnedList({
   onOpen: (cwd: string, label: string) => void;
   onUnpin: (cwd: string) => void;
 }) {
+  const { t } = useTranslation();
   if (favorites.length === 0) return null;
   return (
     <section className="mb-8">
       <SectionHeader
         accent="amber"
-        label="Pinned"
+        label={t('sessionsList.pinned.label')}
         count={favorites.length}
-        hint="quick-access projects"
+        hint={t('sessionsList.pinned.hint')}
         icon={<Pin size={11} className="fill-amber-400 text-amber-400" />}
       />
       <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -166,6 +170,7 @@ function PinnedCard({
   onOpen: () => void;
   onUnpin: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="group relative">
       <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-amber-500/0 group-hover:bg-amber-500/70 transition-colors rounded-l" />
@@ -179,7 +184,7 @@ function PinnedCard({
             <span className="text-sm font-medium text-zinc-100 truncate">{favorite.label}</span>
             {isActive && (
               <span className="text-[9px] uppercase tracking-wider font-mono text-emerald-300 bg-emerald-950/40 border border-emerald-700/30 rounded px-1 py-px">
-                live
+                {t('sessionsList.pinned.liveChip')}
               </span>
             )}
           </div>
@@ -195,8 +200,8 @@ function PinnedCard({
             onUnpin();
           }}
           className="shrink-0 mt-0.5 p-1 rounded text-zinc-600 hover:text-zinc-200 opacity-0 group-hover:opacity-100 transition-opacity"
-          aria-label="unpin"
-          title="Unpin"
+          aria-label={t('sessionsList.unpin.ariaLabel')}
+          title={t('sessionsList.unpin.title')}
         >
           <PinOff size={11} />
         </button>
@@ -218,6 +223,7 @@ function PinnedCard({
  * opened) — no point showing zeroes.
  */
 function ProjectMetricsRow({ cwd }: { cwd: string }) {
+  const { t } = useTranslation();
   const [rollup, setRollup] = useState<ProjectMetricsRollup | null>(null);
   const [baseline, setBaseline] = useState<number>(() => readBaselineRatio());
   useEffect(() => {
@@ -267,12 +273,12 @@ function ProjectMetricsRow({ cwd }: { cwd: string }) {
 
   return (
     <div className="flex items-center gap-2 mt-1.5 text-[10px] font-mono">
-      <span className="text-zinc-400 tabular-nums" title="cumulative supervisor + specialist turns">
-        {totalTurns} turns
+      <span className="text-zinc-400 tabular-nums" title={t('sessionsList.metrics.turns.tooltip')}>
+        {t('sessionsList.metrics.turns', { count: totalTurns })}
       </span>
       <span className="text-zinc-600">·</span>
-      <span className="text-zinc-400 tabular-nums" title="distinct files touched across every session in this project">
-        {rollup.filesTouched} files
+      <span className="text-zinc-400 tabular-nums" title={t('sessionsList.metrics.files.tooltip')}>
+        {t('sessionsList.metrics.files', { count: rollup.filesTouched })}
       </span>
       {passPct !== null && (
         <>
@@ -280,11 +286,15 @@ function ProjectMetricsRow({ cwd }: { cwd: string }) {
           <span
             className={cn('tabular-nums', passColor)}
             title={
-              `phase-contract first-pass rate across this project — ${c.distinctFilenames} doc${c.distinctFilenames === 1 ? '' : 's'}, ` +
-              `${c.totalAttempts} total attempts, ${c.overrides} overrides`
+              t('sessionsList.metrics.firstPass.tooltip', {
+                distinctFilenames: c.distinctFilenames,
+                docSuffix: c.distinctFilenames === 1 ? '' : 's',
+                totalAttempts: c.totalAttempts,
+                overrides: c.overrides,
+              })
             }
           >
-            {passPct}% first-pass
+            {t('sessionsList.metrics.firstPass', { pct: passPct })}
           </span>
         </>
       )}
@@ -292,13 +302,15 @@ function ProjectMetricsRow({ cwd }: { cwd: string }) {
         <span
           className="ml-auto px-1.5 py-px rounded border border-amber-900/40 bg-amber-950/20 text-amber-200/70 tabular-nums"
           title={
-            `Estimate (${baseline}× baseline). ` +
-            `Active ${formatDurationMin(rollup.activeDurationMs)} actual. ` +
-            `At ${baseline}× the manual baseline would have implied ${formatDurationMin(rollup.activeDurationMs * baseline)} — ` +
-            `delta ≈ ${formatDurationMin(baselineMs)} saved. Configure baseline in Settings.`
+            t('sessionsList.metrics.estimate.tooltip', {
+              baseline,
+              activeDuration: formatDurationMin(rollup.activeDurationMs),
+              totalDuration: formatDurationMin(rollup.activeDurationMs * baseline),
+              saved: formatDurationMin(baselineMs),
+            })
           }
         >
-          ≈ {formatEstimate(estimateMin)} saved
+          {t('sessionsList.metrics.estimated', { amount: formatEstimate(estimateMin) })}
           <span className="ml-1 text-[9px] opacity-60 uppercase tracking-wider">
             {baseline}×
           </span>
@@ -349,6 +361,7 @@ export function RecentList({
   onOpen: (cwd: string, label: string) => void;
   onForget: (cwd: string) => void;
 }) {
+  const { t } = useTranslation();
   // De-duplicate against active/pinned — those projects already have
   // their own dedicated cards, no point repeating them in Recent.
   const filtered = recents.filter(
@@ -359,9 +372,9 @@ export function RecentList({
     <section className="mb-8">
       <SectionHeader
         accent="zinc"
-        label="Recent"
+        label={t('sessionsList.recent.label')}
         count={filtered.length}
-        hint="last opened — click to reopen"
+        hint={t('sessionsList.recent.hint')}
         icon={<Clock size={11} className="text-zinc-400" />}
       />
       <div className="space-y-1">
@@ -387,6 +400,7 @@ function RecentCard({
   onOpen: () => void;
   onForget: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="group relative">
       <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-zinc-500/0 group-hover:bg-zinc-500/60 transition-colors rounded-l" />
@@ -411,8 +425,8 @@ function RecentCard({
             onForget();
           }}
           className="shrink-0 p-1 rounded text-zinc-600 hover:text-rose-300 opacity-0 group-hover:opacity-100 transition-opacity"
-          aria-label="forget"
-          title="Forget this project"
+          aria-label={t('sessionsList.forget.ariaLabel')}
+          title={t('sessionsList.forget.title')}
         >
           <Trash2 size={11} />
         </button>
@@ -508,11 +522,12 @@ function PhaseChip({ phase }: { phase: string }) {
 }
 
 function ActivityPill({ sup, dev, busy }: { sup: boolean; dev: boolean; busy: boolean }) {
+  const { t } = useTranslation();
   if (busy) {
     return (
       <span className="flex items-center gap-1 text-[10px] font-mono text-cyan-300">
         <span className="inline-block size-1.5 rounded-full bg-cyan-400 animate-pulse" />
-        working
+        {t('sessionsList.activity.working')}
       </span>
     );
   }
@@ -520,11 +535,11 @@ function ActivityPill({ sup, dev, busy }: { sup: boolean; dev: boolean; busy: bo
     <span className="flex items-center gap-1.5 text-[10px] font-mono text-zinc-500">
       <span className="flex items-center gap-0.5">
         <span className={`inline-block size-1.5 rounded-full ${sup ? 'bg-emerald-400' : 'bg-zinc-700'}`} />
-        sup
+        {t('sessionsList.activity.sup')}
       </span>
       <span className="flex items-center gap-0.5">
         <span className={`inline-block size-1.5 rounded-full ${dev ? 'bg-emerald-400' : 'bg-zinc-700'}`} />
-        dev
+        {t('sessionsList.activity.dev')}
       </span>
     </span>
   );
@@ -536,15 +551,16 @@ function ActivityPill({ sup, dev, busy }: { sup: boolean; dev: boolean; busy: bo
  * for older) is trivial to do inline.
  */
 function formatRelativeTime(ts: number): string {
+  const { t } = useTranslation();
   const diff = Date.now() - ts;
   const sec = Math.round(diff / 1000);
-  if (sec < 60) return 'just now';
+  if (sec < 60) return t('sessionsList.relativeTime.justNow');
   const min = Math.round(sec / 60);
-  if (min < 60) return `${min}m ago`;
+  if (min < 60) return t('sessionsList.relativeTime.minutesAgo', { count: min });
   const hr = Math.round(min / 60);
-  if (hr < 24) return `${hr}h ago`;
+  if (hr < 24) return t('sessionsList.relativeTime.hoursAgo', { count: hr });
   const day = Math.round(hr / 24);
-  if (day < 7) return `${day}d ago`;
+  if (day < 7) return t('sessionsList.relativeTime.daysAgo', { count: day });
   const date = new Date(ts);
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }

@@ -15,6 +15,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { useTranslation } from '../lib/i18n';
 
 interface ToolStyle {
   icon: LucideIcon;
@@ -139,6 +140,7 @@ export function ToolCard({
   startedAt?: number;
   onClick: () => void;
 }) {
+  const { t } = useTranslation();
   const style = styleFor(name);
   const Icon = style.icon;
   const resultLine = firstLine(result);
@@ -186,7 +188,7 @@ export function ToolCard({
               'shrink-0 tabular-nums text-[10px] font-mono ml-1',
               style.iconColor,
             )}
-            title="elapsed since dispatch"
+            title={t('toolCard.elapsed.title')}
           >
             {formatElapsed(elapsedMs)}
           </span>
@@ -200,7 +202,7 @@ export function ToolCard({
           )}
         >
           <span className="shrink-0">{isError ? '✗' : '✓'}</span>
-          <span className="truncate">{resultLine || (isError ? 'error' : 'ok')}</span>
+          <span className="truncate">{resultLine || (isError ? t('toolCard.error') : t('toolCard.ok'))}</span>
         </div>
       )}
       {inFlight && (
@@ -211,7 +213,7 @@ export function ToolCard({
               <span />
               <span />
             </span>
-            <span>running…</span>
+            <span>{t('toolCard.running')}</span>
           </div>
           {/* Indeterminate progress strip: a 33%-wide sliver shimmies
               left-to-right under the card while we wait on the tool result.
