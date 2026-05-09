@@ -28,6 +28,7 @@ import {
   Loader2,
   Lock,
   MessagesSquare,
+  Paperclip,
   Pencil,
   PanelRightClose,
   PanelRightOpen,
@@ -65,6 +66,7 @@ import type {
 import { useSessionStore } from '@/lib/store';
 import { useTranslation, getTranslation, type TranslationKey } from '../lib/i18n';
 import { FilePreviewModal } from './file-preview-modal';
+import { RefsPanel } from './refs-panel';
 import { SettingsModal } from './settings-modal';
 
 /**
@@ -96,7 +98,8 @@ export type RightTab =
   | 'decisions'
   | 'room'
   | 'stack'
-  | 'scripts';
+  | 'scripts'
+  | 'refs';
 
 /**
  * Vertical rail — always-visible icon strip on the far right. Pure
@@ -219,6 +222,13 @@ export function RightRail({
           badge={pendingScripts > 0 ? pendingScripts : undefined}
           onClick={() => onActivateTab('scripts')}
         />
+        <RailButton
+          active={expanded && activeTab === 'refs'}
+          icon={<Paperclip size={15} />}
+          label={t('rightSidebar.rail.refs.label')}
+          title={t('rightSidebar.rail.refs.title')}
+          onClick={() => onActivateTab('refs')}
+        />
         {/* Spacer pushes Settings to the bottom of the rail. */}
         <div className="flex-1" />
         <RailButton
@@ -296,6 +306,7 @@ export function RightPanelContent({
           {activeTab === 'room' && <AgentsRoomPanel chatLog={chatLog} />}
           {activeTab === 'stack' && <StackPanel sessionId={sessionId} />}
           {activeTab === 'scripts' && <ScriptsPanel sessionId={sessionId} />}
+          {activeTab === 'refs' && <RefsPanel sessionId={sessionId} />}
         </div>
       </div>
       {previewPath && (
@@ -329,6 +340,7 @@ const RIGHT_TAB_LABELS: Record<RightTab, (t: (key: TranslationKey) => string) =>
   room: (t) => t('rightSidebar.tab.room'),
   stack: (t) => t('rightSidebar.tab.stack'),
   scripts: (t) => t('rightSidebar.tab.scripts'),
+  refs: (t) => t('rightSidebar.tab.refs'),
 };
 
 function RailButton({

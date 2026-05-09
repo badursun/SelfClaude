@@ -137,7 +137,17 @@ function collectAssistantText(events: StreamEvent[]): string {
 export async function runDualAgentTurn(opts: LoopRunOptions): Promise<LoopTurnResult> {
   const orch = opts.orchestrator;
   const ws = orch.getWorkspace();
-  const supSystemPrompt = opts.supervisorSystemPrompt ?? loadSupervisorSystemPrompt();
+  const baseSupPrompt = opts.supervisorSystemPrompt ?? loadSupervisorSystemPrompt();
+  // Operator-attached references manifest. Built fresh each turn so
+  // adds/removes the operator made between turns become visible to sup
+  // on its very next response — no daemon restart, no chat-log scrape.
+  // When no refs exist the helper returns an empty string and the
+  // append is a no-op, so the prompt stays exactly the legacy shape.
+  const { buildRefsManifest } = await import('../project/refs-store.js');
+  const refsManifest = await buildRefsManifest(ws.cwd);
+  const supSystemPrompt = refsManifest
+    ? `${baseSupPrompt}\n\n${refsManifest}`
+    : baseSupPrompt;
 
   // Build the working agent-session map. Inputs:
   //   • opts.agentSessions (multi-agent caller) — preferred

@@ -39,6 +39,7 @@ const RIGHT_TAB_VALUES = new Set<RightTab>([
   'room',
   'stack',
   'scripts',
+  'refs',
 ]);
 
 export default function SessionPage() {

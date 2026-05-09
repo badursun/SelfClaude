@@ -30,6 +30,15 @@ const VERSION = '0.0.1';
 export function buildWebApi(manager: SessionManager): FastifyInstance {
   const server = Fastify({ logger: false });
 
+  // Buffer raw uploads (operator reference docs land here as
+  // `application/octet-stream`). Default body parser only handles
+  // JSON / urlencoded, so refs uploads would otherwise 415 out.
+  server.addContentTypeParser(
+    'application/octet-stream',
+    { parseAs: 'buffer' },
+    (_req, body, done) => done(null, body),
+  );
+
   // CORS — localhost-bound API, accept any origin so the Next dev server
   // (port 3000) can talk directly to the API (port 7423). This bypasses
   // Next.js's rewrite proxy, which buffers SSE responses in dev and
@@ -410,6 +419,104 @@ export function buildWebApi(manager: SessionManager): FastifyInstance {
     await clearGitIsolation(ctx.cwd);
     ctx.gitIsolation = null;
     return r;
+  });
+
+  /**
+   * Operator-attached reference documents.
+   *
+   * Files persist under `<cwd>/.selfclaude/refs/`; the supervisor sees
+   * a manifest (filename + size) appended to its system prompt every
+   * turn, and reads file contents lazily with the regular Read tool.
+   * Adds and removes journal into chat-log so the decision-report can
+   * show what context the operator handed the session, and when.
+   *
+   * Upload format is `application/octet-stream` with the desired
+   * filename in the `?name=` query param — no multipart parser needed,
+   * no base64 inflation. The route's bodyLimit overrides the API
+   * default (1 MB) to match the storage cap (5 MB).
+   */
+  server.get('/api/sessions/:id/refs', async (req, reply) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = manager.getSession(id);
+    if (!ctx) return reply.code(404).send({ error: 'session not found' });
+    const { listRefs } = await import('../project/refs-store.js');
+    return { refs: await listRefs(ctx.cwd) };
+  });
+
+  server.post(
+    '/api/sessions/:id/refs',
+    {
+      bodyLimit: 6 * 1024 * 1024,
+      config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
+    },
+    async (req, reply) => {
+      const id = (req.params as { id: string }).id;
+      const ctx = manager.getSession(id);
+      if (!ctx) return reply.code(404).send({ error: 'session not found' });
+      const Query = z.object({ name: z.string().min(1).max(200) });
+      const parsed = Query.safeParse(req.query);
+      if (!parsed.success) {
+        return reply.code(400).send({ error: parsed.error.message });
+      }
+      if (!Buffer.isBuffer(req.body)) {
+        return reply
+          .code(400)
+          .send({ error: 'body must be application/octet-stream bytes' });
+      }
+      const { addRef } = await import('../project/refs-store.js');
+      const { appendChatLogEntry } = await import('../project/chat-log.js');
+      const r = await addRef(ctx.cwd, parsed.data.name, req.body);
+      if (!r.ok) {
+        const code = r.reason === 'too-large' ? 413 : 400;
+        return reply.code(code).send(r);
+      }
+      // Audit trail. Best-effort: a chat-log write failure here must
+      // not roll back the upload — the file is on disk and the
+      // operator can see it in the next list call.
+      void appendChatLogEntry(ctx.cwd, {
+        type: 'ref-added',
+        name: r.meta.name,
+        sizeBytes: r.meta.sizeBytes,
+        ts: Date.now(),
+      }).catch(() => {});
+      return r;
+    },
+  );
+
+  server.delete('/api/sessions/:id/refs/:name', async (req, reply) => {
+    const params = req.params as { id: string; name: string };
+    const ctx = manager.getSession(params.id);
+    if (!ctx) return reply.code(404).send({ error: 'session not found' });
+    const { removeRef, isValidRefName } = await import('../project/refs-store.js');
+    if (!isValidRefName(params.name)) {
+      return reply.code(400).send({ error: 'invalid filename' });
+    }
+    const removed = await removeRef(ctx.cwd, params.name);
+    if (!removed) return reply.code(404).send({ error: 'ref not found' });
+    const { appendChatLogEntry } = await import('../project/chat-log.js');
+    void appendChatLogEntry(ctx.cwd, {
+      type: 'ref-removed',
+      name: params.name,
+      ts: Date.now(),
+    }).catch(() => {});
+    return { ok: true };
+  });
+
+  server.get('/api/sessions/:id/refs/:name', async (req, reply) => {
+    const params = req.params as { id: string; name: string };
+    const ctx = manager.getSession(params.id);
+    if (!ctx) return reply.code(404).send({ error: 'session not found' });
+    const { readRef, isValidRefName } = await import('../project/refs-store.js');
+    if (!isValidRefName(params.name)) {
+      return reply.code(400).send({ error: 'invalid filename' });
+    }
+    const buf = await readRef(ctx.cwd, params.name);
+    if (!buf) return reply.code(404).send({ error: 'ref not found' });
+    reply
+      .type('application/octet-stream')
+      .header('Content-Disposition', `attachment; filename="${params.name}"`)
+      .send(buf);
+    return reply;
   });
 
   /**

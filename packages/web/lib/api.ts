@@ -568,6 +568,50 @@ export const api = {
       body: JSON.stringify({ branch, originalBranch }),
     });
   },
+  /**
+   * Operator-attached reference docs. Files live under
+   * `<cwd>/.selfclaude/refs/`; the supervisor sees a manifest in its
+   * system prompt every turn and reads files lazily with the Read tool.
+   */
+  listRefs(sessionId: string) {
+    return jsonFetch<{ refs: Array<{ name: string; sizeBytes: number; mtimeMs: number }> }>(
+      `/api/sessions/${sessionId}/refs`,
+    );
+  },
+  async uploadRef(sessionId: string, file: File) {
+    // Raw octet-stream — filename rides as a query param so we don't
+    // pull in @fastify/multipart server-side just for one upload route.
+    const url = `/api/sessions/${sessionId}/refs?name=${encodeURIComponent(file.name)}`;
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/octet-stream' },
+      body: file,
+    });
+    if (!r.ok) {
+      let message = `${r.status} ${r.statusText}`;
+      try {
+        const body = (await r.json()) as { error?: string; message?: string };
+        message = body.error ?? body.message ?? message;
+      } catch {
+        /* non-JSON body — keep default */
+      }
+      throw new Error(message);
+    }
+    return (await r.json()) as {
+      ok: true;
+      meta: { name: string; sizeBytes: number; mtimeMs: number };
+      renamed: boolean;
+    };
+  },
+  removeRef(sessionId: string, name: string) {
+    return jsonFetch<{ ok: true }>(
+      `/api/sessions/${sessionId}/refs/${encodeURIComponent(name)}`,
+      { method: 'DELETE' },
+    );
+  },
+  refDownloadUrl(sessionId: string, name: string) {
+    return `/api/sessions/${sessionId}/refs/${encodeURIComponent(name)}`;
+  },
 };
 
 /* ───── Phase 5 isolation types ───── */

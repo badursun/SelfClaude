@@ -211,6 +211,103 @@ test('Phase 7 — surfaceFailure emits turn-error with the classifier code match
   });
 });
 
+test('Refs — POST /refs uploads bytes, GET /refs lists them, DELETE removes them', async () => {
+  await withTempGitRepo(async (cwd) => {
+    await withApi(async (server) => {
+      const create = await server.inject({
+        method: 'POST',
+        url: '/api/sessions',
+        headers: { 'content-type': 'application/json' },
+        payload: { cwd, label: 'refs' },
+      });
+      const { id } = create.json() as { id: string };
+
+      // Empty list
+      const empty = await server.inject({ method: 'GET', url: `/api/sessions/${id}/refs` });
+      assert.equal(empty.statusCode, 200);
+      assert.deepEqual((empty.json() as { refs: unknown[] }).refs, []);
+
+      // Upload
+      const body = Buffer.from('# Brief\nbuild a thing\n');
+      const upload = await server.inject({
+        method: 'POST',
+        url: `/api/sessions/${id}/refs?name=BRIEF.md`,
+        headers: { 'content-type': 'application/octet-stream' },
+        payload: body,
+      });
+      assert.equal(upload.statusCode, 200);
+      const uploadBody = upload.json() as { ok: boolean; meta: { name: string; sizeBytes: number } };
+      assert.equal(uploadBody.ok, true);
+      assert.equal(uploadBody.meta.name, 'BRIEF.md');
+      assert.equal(uploadBody.meta.sizeBytes, body.length);
+
+      // List shows it
+      const list = await server.inject({ method: 'GET', url: `/api/sessions/${id}/refs` });
+      const listBody = list.json() as { refs: Array<{ name: string }> };
+      assert.equal(listBody.refs.length, 1);
+      assert.equal(listBody.refs[0]!.name, 'BRIEF.md');
+
+      // Download round-trip
+      const download = await server.inject({
+        method: 'GET',
+        url: `/api/sessions/${id}/refs/BRIEF.md`,
+      });
+      assert.equal(download.statusCode, 200);
+      assert.equal(download.body, body.toString('utf8'));
+
+      // Delete
+      const del = await server.inject({
+        method: 'DELETE',
+        url: `/api/sessions/${id}/refs/BRIEF.md`,
+      });
+      assert.equal(del.statusCode, 200);
+      const after = await server.inject({ method: 'GET', url: `/api/sessions/${id}/refs` });
+      assert.deepEqual((after.json() as { refs: unknown[] }).refs, []);
+    });
+  });
+});
+
+test('Refs — invalid filenames + oversized uploads rejected with appropriate codes', async () => {
+  await withTempGitRepo(async (cwd) => {
+    await withApi(async (server) => {
+      const create = await server.inject({
+        method: 'POST',
+        url: '/api/sessions',
+        headers: { 'content-type': 'application/json' },
+        payload: { cwd, label: 'refs-validate' },
+      });
+      const { id } = create.json() as { id: string };
+
+      // Path-traversal name
+      const bad = await server.inject({
+        method: 'POST',
+        url: `/api/sessions/${id}/refs?name=${encodeURIComponent('../escape.md')}`,
+        headers: { 'content-type': 'application/octet-stream' },
+        payload: Buffer.from('x'),
+      });
+      assert.equal(bad.statusCode, 400);
+
+      // Oversized payload — fastify rejects at body-limit before our
+      // handler runs, which surfaces as a 413.
+      const huge = Buffer.alloc(7 * 1024 * 1024);
+      const oversize = await server.inject({
+        method: 'POST',
+        url: `/api/sessions/${id}/refs?name=huge.bin`,
+        headers: { 'content-type': 'application/octet-stream' },
+        payload: huge,
+      });
+      assert.equal(oversize.statusCode, 413);
+
+      // Delete on missing returns 404
+      const missing = await server.inject({
+        method: 'DELETE',
+        url: `/api/sessions/${id}/refs/never-existed.md`,
+      });
+      assert.equal(missing.statusCode, 404);
+    });
+  });
+});
+
 test('Phase 7 — checkStuck emits session-stuck only on transitions, recovery fires the inverse', async () => {
   await withTempGitRepo(async (cwd) => {
     await withApi(async (server, mgr) => {

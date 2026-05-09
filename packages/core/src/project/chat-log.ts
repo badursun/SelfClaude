@@ -307,6 +307,25 @@ export const ChatLogEntrySchema = z.discriminatedUnion('type', [
     notes: z.string().default(''),
     ts: z.number(),
   }),
+  /**
+   * Operator-attached reference document landed in `.selfclaude/refs/`.
+   * Surfaced to the supervisor via a system-prompt manifest on every
+   * turn (the file content itself is loaded lazily by sup via Read).
+   * We keep the per-add / per-remove journal so the decision-report
+   * can show "operator added BRIEF.md before phase 2" without scraping
+   * the filesystem at render time.
+   */
+  z.object({
+    type: z.literal('ref-added'),
+    name: z.string(),
+    sizeBytes: z.number().int().nonnegative(),
+    ts: z.number(),
+  }),
+  z.object({
+    type: z.literal('ref-removed'),
+    name: z.string(),
+    ts: z.number(),
+  }),
 ]);
 
 export type ChatLogEntry = z.infer<typeof ChatLogEntrySchema>;
