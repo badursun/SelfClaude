@@ -13,7 +13,6 @@
   },
   "dependencies": {
     "@selfclaude/core": "workspace:*",
-    "@selfclaude/tui": "workspace:*",
     "commander": "^12.1.0"
   }
 }

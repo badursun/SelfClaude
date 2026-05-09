@@ -1,4 +1,4 @@
-// Public surface re-exported for downstream packages (cli, tui, web).
+// Public surface re-exported for downstream packages (cli, web).
 
 export {
   Orchestrator,

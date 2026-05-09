@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import { resolve } from 'node:path';
 import { Command } from 'commander';
 import { daemonLogs, daemonStart, daemonStatus, daemonStop, isAlive, readPid } from './daemon.js';
 import { openUrl } from './open-url.js';
@@ -15,100 +14,31 @@ program
 program
   .command('start', { isDefault: true })
   .description('Start SelfClaude (daemon by default; --foreground for debug)')
-  .option('--demo', 'Render the legacy TUI with synthetic events (no real claude subprocess)')
-  .option('--tui', 'Use the legacy Ink TUI instead of the web UI')
   .option('--foreground', 'Run in the foreground (Ctrl+C exits) — daemon is the default')
   .option('--no-open', "Don't auto-open the browser")
   .option('--port <port>', 'Web API port', '7423')
   .option('--web-port <port>', 'Next.js dev server port', '3000')
-  .option('--cwd <dir>', 'Working directory the orchestrator operates in (TUI mode only)')
   .action(
     async (opts: {
-      demo?: boolean;
-      tui?: boolean;
       foreground?: boolean;
       open?: boolean;
       port?: string;
       webPort?: string;
-      cwd?: string;
     }) => {
-      if (opts.demo) {
-        const { startDemo } = await import('@selfclaude/tui');
-        await startDemo();
-        return;
-      }
-
-      // Real-runtime paths require the Claude Code CLI. Demo mode skips
-      // this check on purpose (it's pure synthetic events, no spawn).
       ensurePreflight();
-
-      // Web mode is the default. Daemon unless explicitly --foreground.
-      if (!opts.tui) {
-        if (opts.foreground) {
-          await runWebMode({
-            apiPort: Number(opts.port ?? 7423),
-            nextPort: Number(opts.webPort ?? 3000),
-            openBrowser: opts.open !== false,
-          });
-        } else {
-          await daemonStart({
-            apiPort: Number(opts.port ?? 7423),
-            webPort: Number(opts.webPort ?? 3000),
-            openBrowser: opts.open !== false,
-          });
-        }
-        return;
+      if (opts.foreground) {
+        await runWebMode({
+          apiPort: Number(opts.port ?? 7423),
+          nextPort: Number(opts.webPort ?? 3000),
+          openBrowser: opts.open !== false,
+        });
+      } else {
+        await daemonStart({
+          apiPort: Number(opts.port ?? 7423),
+          webPort: Number(opts.webPort ?? 3000),
+          openBrowser: opts.open !== false,
+        });
       }
-
-      const cwd = opts.cwd ? resolve(opts.cwd) : process.cwd();
-    const {
-      Orchestrator,
-      TelegramBridge,
-      GrammyTelegramAdapter,
-      loadEnv,
-      hasTelegram,
-    } = await import('@selfclaude/core');
-    const { startInteractive } = await import('@selfclaude/tui');
-
-    const orch = new Orchestrator({ cwd });
-    const env = loadEnv();
-    let bridge: InstanceType<typeof TelegramBridge> | null = null;
-
-    let stopping = false;
-    const stop = async () => {
-      if (stopping) return;
-      stopping = true;
-      try {
-        if (bridge) await bridge.stop();
-      } catch {
-        /* ignore */
-      }
-      try {
-        await orch.stop();
-      } catch {
-        /* ignore */
-      }
-    };
-    process.on('SIGINT', () => {
-      void stop().then(() => process.exit(0));
-    });
-    process.on('SIGTERM', () => {
-      void stop().then(() => process.exit(0));
-    });
-
-    const startResult = await orch.start();
-
-    if (hasTelegram(env)) {
-      const adapter = new GrammyTelegramAdapter(env.TELEGRAM_BOT_TOKEN!, env.TELEGRAM_CHAT_ID!);
-      bridge = new TelegramBridge({ orchestrator: orch, adapter });
-      await bridge.start();
-    }
-
-    try {
-      await startInteractive(orch, startResult);
-    } finally {
-      await stop();
-    }
     },
   );
 
