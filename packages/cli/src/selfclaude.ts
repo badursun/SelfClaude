@@ -276,7 +276,11 @@ program
   .command('update')
   .description('Pull latest SelfClaude and reinstall dependencies')
   .option('--no-restart', 'Skip daemon restart after update')
-  .action(async (opts: { restart?: boolean }) => {
+  .option(
+    '--force',
+    'Discard uncommitted local changes in the install dir (destructive)',
+  )
+  .action(async (opts: { restart?: boolean; force?: boolean }) => {
     const { findRepoRoot } = await import('@selfclaude/core');
     const { fileURLToPath } = await import('node:url');
     const { dirname } = await import('node:path');
@@ -284,6 +288,27 @@ program
 
     const HERE = dirname(fileURLToPath(import.meta.url));
     const appDir = findRepoRoot(HERE);
+
+    // Guard against silently destroying operator edits. The install
+    // dir is a real git repo, and `git reset --hard` below would wipe
+    // any uncommitted work — including hand-tuned system prompts or
+    // mid-debug tweaks. Refuse early unless the operator has opted in
+    // with `--force`.
+    const dirty = execFileSync('git', ['status', '--porcelain'], {
+      cwd: appDir,
+      encoding: 'utf8',
+    }).trim();
+    if (dirty.length > 0 && !opts.force) {
+      console.error('Refusing to update — install dir has uncommitted changes:');
+      console.error('');
+      console.error(dirty);
+      console.error('');
+      console.error(`Install dir: ${appDir}`);
+      console.error(
+        'Commit or stash them first, or pass --force to discard them.',
+      );
+      process.exit(1);
+    }
 
     const beforeHash = execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
       cwd: appDir,
