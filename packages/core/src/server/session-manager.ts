@@ -520,6 +520,7 @@ export class SessionManager extends EventEmitter {
     await this.restoreWakeups(ctx);
     await this.restoreActiveAgents(ctx);
     await this.restoreMetrics(ctx);
+    await this.restoreLastProgress(ctx);
     await this.restoreGitIsolation(ctx);
 
     // Phase 2 telemetry — session boundary marker. Goes into the JSONL
@@ -2566,6 +2567,44 @@ export class SessionManager extends EventEmitter {
           source: 'supervisor',
           body,
         });
+      }
+    }
+  }
+
+  /**
+   * Seed `ctx.lastProgressTs` from the chat-log on session boot.
+   *
+   * Without this, a restart leaves `lastProgressTs = null` while the
+   * persisted `supMetrics.totalTurns` is restored to whatever it was
+   * before (often ≥ 3 from real work). The next stuck-detector tick
+   * then mistakes a freshly-resumed session for a "no-progress-yet"
+   * stuck case and fires the banner immediately, even though the
+   * operator hasn't done anything new yet.
+   *
+   * Scan latest-first and stop at the first progress marker found.
+   * If the log has none (brand-new project, no real work yet), leave
+   * `lastProgressTs` null — the detector still suppresses on
+   * `too-few-turns` until the operator actually drives the session
+   * past the threshold.
+   */
+  private async restoreLastProgress(ctx: SessionContext): Promise<void> {
+    let entries: ChatLogEntry[];
+    try {
+      entries = await readChatLog(ctx.cwd);
+    } catch {
+      return;
+    }
+    for (let i = entries.length - 1; i >= 0; i--) {
+      const e = entries[i]!;
+      const toolName = (e as { name?: string }).name;
+      if (isProgressMarker(e.type, toolName)) {
+        ctx.lastProgressTs = e.ts;
+        log('info', 'session.last_progress_restored', {
+          id: ctx.id,
+          ts: e.ts,
+          type: e.type,
+        });
+        return;
       }
     }
   }
