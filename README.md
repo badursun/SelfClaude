@@ -69,7 +69,7 @@ The script lives at [install.sh](./install.sh) — read it first if piping rando
 3. Runs `pnpm install --frozen-lockfile` inside that dir. No global npm installs.
 4. Symlinks a `selfclaude` command into `/usr/local/bin` (or `~/.local/bin` if no write access).
 
-Removes cleanly: `rm -rf ~/.selfclaude/` plus deleting the symlink. Re-running the install command updates by `git pull` — idempotent.
+Removes cleanly: `rm -rf ~/.selfclaude/` plus deleting the symlink. Update with `selfclaude update` (pulls latest + reinstalls deps + restarts the daemon if running).
 
 macOS + Linux only; Windows is untested.
 
@@ -165,6 +165,7 @@ The rest is machine-managed (settings, hooks, scripts, telemetry). Your global `
 | `selfclaude status` | Daemon up? PID, web URL |
 | `selfclaude logs` / `logs -f` | Tail run log |
 | `selfclaude link-telegram` | Pair a Telegram chat for off-screen prompts |
+| `selfclaude update` | Pull latest + reinstall deps + restart daemon |
 | `selfclaude doctor` | Sanity-check env + Telegram |
 
 ## Config

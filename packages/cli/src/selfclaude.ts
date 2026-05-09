@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { resolve } from 'node:path';
 import { Command } from 'commander';
-import { daemonLogs, daemonStart, daemonStatus, daemonStop } from './daemon.js';
+import { daemonLogs, daemonStart, daemonStatus, daemonStop, isAlive, readPid } from './daemon.js';
 import { openUrl } from './open-url.js';
 import { ensurePreflight } from './preflight.js';
 
@@ -269,6 +269,62 @@ program
     } catch (e) {
       console.error(`link failed: ${(e as Error).message}`);
       process.exit(1);
+    }
+  });
+
+program
+  .command('update')
+  .description('Pull latest SelfClaude and reinstall dependencies')
+  .option('--no-restart', 'Skip daemon restart after update')
+  .action(async (opts: { restart?: boolean }) => {
+    const { findRepoRoot } = await import('@selfclaude/core');
+    const { fileURLToPath } = await import('node:url');
+    const { dirname } = await import('node:path');
+    const { execFileSync } = await import('node:child_process');
+
+    const HERE = dirname(fileURLToPath(import.meta.url));
+    const appDir = findRepoRoot(HERE);
+
+    const beforeHash = execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
+      cwd: appDir,
+      encoding: 'utf8',
+    }).trim();
+
+    console.log('Fetching latest from origin/main…');
+    execFileSync('git', ['fetch', '--depth', '1', 'origin', 'main'], {
+      cwd: appDir,
+      stdio: 'inherit',
+    });
+    execFileSync('git', ['reset', '--hard', 'origin/main'], {
+      cwd: appDir,
+      stdio: 'inherit',
+    });
+
+    const afterHash = execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
+      cwd: appDir,
+      encoding: 'utf8',
+    }).trim();
+
+    if (beforeHash === afterHash) {
+      console.log(`✓ Already up to date (${afterHash})`);
+      return;
+    }
+
+    console.log('Installing dependencies…');
+    execFileSync('pnpm', ['install', '--frozen-lockfile'], {
+      cwd: appDir,
+      stdio: 'inherit',
+    });
+
+    console.log(`✓ Updated ${beforeHash} → ${afterHash}`);
+
+    if (opts.restart !== false) {
+      const pid = readPid();
+      if (pid !== null && isAlive(pid)) {
+        console.log('Restarting daemon…');
+        await daemonStop();
+        await daemonStart();
+      }
     }
   });
 
