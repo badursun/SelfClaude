@@ -153,6 +153,8 @@ Everything hangs off the chat-log on disk at `<your-project>/.selfclaude/chat-lo
 
 The rest is machine-managed (settings, hooks, scripts, telemetry). Your global `~/.claude/settings.json` is **not** touched.
 
+**Handing sup a brief.** If you have a PRD, spec, or design doc you want sup to use as source-of-truth, drop it into the **References** tab on the right pane (📎 icon). Files persist to `<cwd>/.selfclaude/refs/` and sup sees a manifest of them in its system prompt every turn — it reads the contents lazily with the Read tool, so a 5 MB brief costs zero tokens unless sup actually opens it. Add or remove files anytime; the next sup turn picks up the change automatically.
+
 ---
 
 ## CLI

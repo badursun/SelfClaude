@@ -1,6 +1,6 @@
 {
   "name": "@selfclaude/core",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "SelfClaude core: orchestrator, hooks, MCP, Telegram, project state, web API",
   "private": true,
   "type": "module",

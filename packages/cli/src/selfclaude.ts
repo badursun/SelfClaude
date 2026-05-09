@@ -9,7 +9,7 @@ const program = new Command();
 program
   .name('selfclaude')
   .description('Two-agent Claude Code orchestration')
-  .version('0.0.1');
+  .version('0.1.0');
 
 program
   .command('start', { isDefault: true })

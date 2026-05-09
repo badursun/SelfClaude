@@ -1,6 +1,6 @@
 {
   "name": "@selfclaude/cli",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "SelfClaude CLI entry — selfclaude binary",
   "private": true,
   "type": "module",
