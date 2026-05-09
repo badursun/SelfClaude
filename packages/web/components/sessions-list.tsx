@@ -274,11 +274,11 @@ function ProjectMetricsRow({ cwd }: { cwd: string }) {
   return (
     <div className="flex items-center gap-2 mt-1.5 text-[10px] font-mono">
       <span className="text-zinc-400 tabular-nums" title={t('sessionsList.metrics.turns.tooltip')}>
-        {t('sessionsList.metrics.turns', { count: totalTurns })}
+        {t('sessionsList.metrics.turns', { totalTurns })}
       </span>
       <span className="text-zinc-600">·</span>
       <span className="text-zinc-400 tabular-nums" title={t('sessionsList.metrics.files.tooltip')}>
-        {t('sessionsList.metrics.files', { count: rollup.filesTouched })}
+        {t('sessionsList.metrics.files', { filesTouched: rollup.filesTouched })}
       </span>
       {passPct !== null && (
         <>
@@ -287,14 +287,13 @@ function ProjectMetricsRow({ cwd }: { cwd: string }) {
             className={cn('tabular-nums', passColor)}
             title={
               t('sessionsList.metrics.firstPass.tooltip', {
-                distinctFilenames: c.distinctFilenames,
-                docSuffix: c.distinctFilenames === 1 ? '' : 's',
+                docCount: c.distinctFilenames,
                 totalAttempts: c.totalAttempts,
                 overrides: c.overrides,
               })
             }
           >
-            {t('sessionsList.metrics.firstPass', { pct: passPct })}
+            {t('sessionsList.metrics.firstPass', { passPct })}
           </span>
         </>
       )}
@@ -306,11 +305,11 @@ function ProjectMetricsRow({ cwd }: { cwd: string }) {
               baseline,
               activeDuration: formatDurationMin(rollup.activeDurationMs),
               totalDuration: formatDurationMin(rollup.activeDurationMs * baseline),
-              saved: formatDurationMin(baselineMs),
+              delta: formatDurationMin(baselineMs),
             })
           }
         >
-          {t('sessionsList.metrics.estimated', { amount: formatEstimate(estimateMin) })}
+          {t('sessionsList.metrics.estimated', { estimateMin: formatEstimate(estimateMin) })}
           <span className="ml-1 text-[9px] opacity-60 uppercase tracking-wider">
             {baseline}×
           </span>
@@ -556,11 +555,11 @@ function formatRelativeTime(ts: number): string {
   const sec = Math.round(diff / 1000);
   if (sec < 60) return t('sessionsList.relativeTime.justNow');
   const min = Math.round(sec / 60);
-  if (min < 60) return t('sessionsList.relativeTime.minutesAgo', { count: min });
+  if (min < 60) return t('sessionsList.relativeTime.minutesAgo', { min });
   const hr = Math.round(min / 60);
-  if (hr < 24) return t('sessionsList.relativeTime.hoursAgo', { count: hr });
+  if (hr < 24) return t('sessionsList.relativeTime.hoursAgo', { hr });
   const day = Math.round(hr / 24);
-  if (day < 7) return t('sessionsList.relativeTime.daysAgo', { count: day });
+  if (day < 7) return t('sessionsList.relativeTime.daysAgo', { day });
   const date = new Date(ts);
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }

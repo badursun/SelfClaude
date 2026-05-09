@@ -205,7 +205,7 @@ export function AgentPane({
 
   return (
     <div className="h-full flex flex-col min-w-0">
-      <div className="flex items-stretch border-b border-border bg-bg-subtle h-7 shrink-0">
+      <div className="flex items-stretch border-b border-border bg-bg-subtle h-7 shrink-0 overflow-hidden">
         {allAgents.map((agent) => (
           <AgentTab
             key={agent}
@@ -266,31 +266,51 @@ const AGENT_LABEL: Record<string, string> = {
 };
 
 
-const AGENT_TAB_ACCENT: Record<string, { active: string; idle: string; dot: string }> = {
+/**
+ * Per-agent palette. Three layers:
+ *   - `active` paints the selected tab (border + text + filled bg).
+ *   - `idle`   keeps inactive-but-summoned tabs neutral on baseline,
+ *     with a faint coloured wash on hover so identity reads on hover.
+ *   - `iconColor` always renders the agent's icon in its accent so the
+ *     strip is colour-coded at rest, not only when active. Without this,
+ *     tabs read as a row of generic monospace labels.
+ *
+ * `refactorer` uses `sky` (not zinc) so all five agents have visually
+ * distinct hues — zinc collided with the strip's neutral idle treatment.
+ */
+const AGENT_TAB_ACCENT: Record<
+  string,
+  { active: string; idle: string; iconColor: string; dot: string }
+> = {
   developer: {
-    active: 'border-amber-500 text-amber-200 bg-amber-950/30',
-    idle: 'border-transparent text-zinc-400 hover:text-zinc-100',
+    active: 'border-amber-500 text-amber-100 bg-amber-950/40',
+    idle: 'border-transparent text-zinc-300 hover:text-amber-100 hover:bg-amber-950/15',
+    iconColor: 'text-amber-400',
     dot: 'bg-amber-400',
   },
   'ui-dev': {
-    active: 'border-violet-500 text-violet-200 bg-violet-950/30',
-    idle: 'border-transparent text-zinc-400 hover:text-zinc-100',
+    active: 'border-violet-500 text-violet-100 bg-violet-950/40',
+    idle: 'border-transparent text-zinc-300 hover:text-violet-100 hover:bg-violet-950/15',
+    iconColor: 'text-violet-400',
     dot: 'bg-violet-400',
   },
   security: {
-    active: 'border-rose-500 text-rose-200 bg-rose-950/30',
-    idle: 'border-transparent text-zinc-400 hover:text-zinc-100',
+    active: 'border-rose-500 text-rose-100 bg-rose-950/40',
+    idle: 'border-transparent text-zinc-300 hover:text-rose-100 hover:bg-rose-950/15',
+    iconColor: 'text-rose-400',
     dot: 'bg-rose-400',
   },
   tester: {
-    active: 'border-emerald-500 text-emerald-200 bg-emerald-950/30',
-    idle: 'border-transparent text-zinc-400 hover:text-zinc-100',
+    active: 'border-emerald-500 text-emerald-100 bg-emerald-950/40',
+    idle: 'border-transparent text-zinc-300 hover:text-emerald-100 hover:bg-emerald-950/15',
+    iconColor: 'text-emerald-400',
     dot: 'bg-emerald-400',
   },
   refactorer: {
-    active: 'border-zinc-500 text-zinc-200 bg-zinc-800/40',
-    idle: 'border-transparent text-zinc-400 hover:text-zinc-100',
-    dot: 'bg-zinc-400',
+    active: 'border-sky-500 text-sky-100 bg-sky-950/40',
+    idle: 'border-transparent text-zinc-300 hover:text-sky-100 hover:bg-sky-950/15',
+    iconColor: 'text-sky-400',
+    dot: 'bg-sky-400',
   },
 };
 
@@ -313,62 +333,60 @@ function AgentTab({
   const accent = AGENT_TAB_ACCENT[agent] ?? AGENT_TAB_ACCENT.developer!;
 
   // Three activity tiers based on most-recent event timestamp:
-  //   live    — last 3s; agent is currently producing output → "running"
+  //   live    — last 3s; agent is currently producing output → pulsing dot
   //   recent  — last 30s; just finished, fading out → solid dot
   //   idle    — older or never; no indicator
   const ageMs = lastTs > 0 ? Date.now() - lastTs : Number.POSITIVE_INFINITY;
   const live = ageMs < 3_000;
   const recent = !live && ageMs < 30_000;
 
-  // Inactive (not summoned by sup yet) — render in a muted style with
-  // a small "+" affordance to signal "click to propose dispatching."
-  if (!summoned) {
-    return (
-      <button
-        onClick={onClick}
-        className={cn(
-          'flex items-center gap-1.5 px-3 border-b-2 text-[11px] font-mono uppercase tracking-wide transition-colors',
-          active
-            ? 'border-zinc-500 text-zinc-300 bg-bg-elevated/40'
-            : 'border-transparent text-zinc-600 hover:text-zinc-300 hover:bg-bg-elevated/30',
-        )}
-        title={t('agentPane.tab.notActive.title', { agent })}
-      >
-        <Icon size={11} className="opacity-60" />
-        <span className="opacity-80">{agent}</span>
-        <Plus size={10} className="opacity-50" />
-      </button>
-    );
-  }
+  // Single layout for both summoned and not-summoned: equal-share tabs
+  // (`flex-1 min-w-0` so they always fit in the strip, no horizontal
+  // scroll, no two-line wrap). The agent name truncates with ellipsis
+  // when the strip is narrow; the icon stays full-size and colour-coded
+  // so the agent identity reads even when only the icon survives.
+  const stateCls = !summoned
+    ? active
+      ? 'border-zinc-500 text-zinc-200 bg-bg-elevated/40'
+      : 'border-transparent text-zinc-500 hover:text-zinc-200 hover:bg-bg-elevated/30'
+    : active
+      ? accent.active
+      : accent.idle;
 
   return (
     <button
       onClick={onClick}
       className={cn(
-        'flex items-center gap-1.5 px-3 border-b-2 text-[11px] font-mono uppercase tracking-wide transition-colors',
-        active ? accent.active : accent.idle,
+        'group relative flex-1 min-w-0 flex items-center justify-center gap-1.5 px-2',
+        'border-b-2 text-[11px] font-mono uppercase tracking-wide transition-colors',
+        stateCls,
       )}
+      title={!summoned ? t('agentPane.tab.notActive.title', { agent }) : agent}
     >
-      <Icon size={12} />
-      {agent}
-      {live && (
-        <>
-          <span
-            className={cn(
-              'inline-block w-2 h-2 rounded-full animate-pulse',
-              accent.dot,
-            )}
-            title={t('agentPane.tab.streamingNow')}
-          />
-          <span className={cn('lowercase tracking-normal italic', accent.idle.includes('text-') ? '' : '')}>
-            {t('agentPane.tab.running')}
-          </span>
-        </>
-      )}
-      {recent && !live && (
+      <Icon
+        size={12}
+        className={cn('shrink-0', summoned ? accent.iconColor : 'opacity-50')}
+      />
+      <span className="truncate">{agent}</span>
+      {summoned && live && (
         <span
-          className={cn('inline-block w-1.5 h-1.5 rounded-full', accent.dot)}
+          className={cn(
+            'shrink-0 inline-block w-2 h-2 rounded-full animate-pulse',
+            accent.dot,
+          )}
+          title={t('agentPane.tab.streamingNow')}
+        />
+      )}
+      {summoned && recent && !live && (
+        <span
+          className={cn('shrink-0 inline-block w-1.5 h-1.5 rounded-full', accent.dot)}
           title={t('agentPane.tab.recentActivity')}
+        />
+      )}
+      {!summoned && (
+        <Plus
+          size={10}
+          className="shrink-0 opacity-0 group-hover:opacity-50 transition-opacity"
         />
       )}
     </button>
