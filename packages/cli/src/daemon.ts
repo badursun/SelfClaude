@@ -89,14 +89,14 @@ function ensureRunDir(): void {
   if (!existsSync(RUN_DIR)) mkdirSync(RUN_DIR, { recursive: true });
 }
 
-function readPid(): number | null {
+export function readPid(): number | null {
   if (!existsSync(PID_FILE)) return null;
   const raw = readFileSync(PID_FILE, 'utf8').trim();
   const n = Number(raw);
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
-function isAlive(pid: number): boolean {
+export function isAlive(pid: number): boolean {
   try {
     process.kill(pid, 0);
     return true;

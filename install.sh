@@ -197,9 +197,8 @@ printf '  Other commands:\n'
 printf '    selfclaude status      check if running\n'
 printf '    selfclaude restart     reload code changes\n'
 printf '    selfclaude logs -f     tail daemon logs\n'
-printf '    selfclaude stop        graceful shutdown\n\n'
+printf '    selfclaude stop        graceful shutdown\n'
+printf '    selfclaude update      pull latest + reinstall deps\n\n'
 printf '  Optional setup:\n'
 printf '    Telegram fallback for unanswered prompts:  selfclaude link-telegram\n'
 printf '    Chrome integration for sup verification:    https://claude.ai/chrome\n\n'
-printf '%s  Update later by re-running this installer, or:%s\n' "$DIM" "$RESET"
-printf '%s    cd %s && git pull && pnpm install%s\n\n' "$DIM" "$INSTALL_DIR" "$RESET"
