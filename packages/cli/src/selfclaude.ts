@@ -3,13 +3,14 @@ import { Command } from 'commander';
 import { daemonLogs, daemonStart, daemonStatus, daemonStop, isAlive, readPid } from './daemon.js';
 import { openUrl } from './open-url.js';
 import { ensurePreflight } from './preflight.js';
+import { pickLatestReleaseTag } from './release-target.js';
 
 const program = new Command();
 
 program
   .name('selfclaude')
   .description('Two-agent Claude Code orchestration')
-  .version('0.1.0');
+  .version('0.2.0');
 
 program
   .command('start', { isDefault: true })
@@ -204,84 +205,138 @@ program
 
 program
   .command('update')
-  .description('Pull latest SelfClaude and reinstall dependencies')
+  .description('Pull the latest SelfClaude release and reinstall dependencies')
   .option('--no-restart', 'Skip daemon restart after update')
   .option(
     '--force',
     'Discard uncommitted local changes in the install dir (destructive)',
   )
-  .action(async (opts: { restart?: boolean; force?: boolean }) => {
-    const { findRepoRoot } = await import('@selfclaude/core');
-    const { fileURLToPath } = await import('node:url');
-    const { dirname } = await import('node:path');
-    const { execFileSync } = await import('node:child_process');
+  .option(
+    '--edge',
+    'Pull origin/main instead of the latest tagged release (bleeding-edge)',
+  )
+  .action(
+    async (opts: { restart?: boolean; force?: boolean; edge?: boolean }) => {
+      const { findRepoRoot } = await import('@selfclaude/core');
+      const { fileURLToPath } = await import('node:url');
+      const { dirname } = await import('node:path');
+      const { execFileSync } = await import('node:child_process');
 
-    const HERE = dirname(fileURLToPath(import.meta.url));
-    const appDir = findRepoRoot(HERE);
+      const HERE = dirname(fileURLToPath(import.meta.url));
+      const appDir = findRepoRoot(HERE);
 
-    // Guard against silently destroying operator edits. The install
-    // dir is a real git repo, and `git reset --hard` below would wipe
-    // any uncommitted work — including hand-tuned system prompts or
-    // mid-debug tweaks. Refuse early unless the operator has opted in
-    // with `--force`.
-    const dirty = execFileSync('git', ['status', '--porcelain'], {
-      cwd: appDir,
-      encoding: 'utf8',
-    }).trim();
-    if (dirty.length > 0 && !opts.force) {
-      console.error('Refusing to update — install dir has uncommitted changes:');
-      console.error('');
-      console.error(dirty);
-      console.error('');
-      console.error(`Install dir: ${appDir}`);
-      console.error(
-        'Commit or stash them first, or pass --force to discard them.',
-      );
-      process.exit(1);
-    }
-
-    const beforeHash = execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
-      cwd: appDir,
-      encoding: 'utf8',
-    }).trim();
-
-    console.log('Fetching latest from origin/main…');
-    execFileSync('git', ['fetch', '--depth', '1', 'origin', 'main'], {
-      cwd: appDir,
-      stdio: 'inherit',
-    });
-    execFileSync('git', ['reset', '--hard', 'origin/main'], {
-      cwd: appDir,
-      stdio: 'inherit',
-    });
-
-    const afterHash = execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
-      cwd: appDir,
-      encoding: 'utf8',
-    }).trim();
-
-    if (beforeHash === afterHash) {
-      console.log(`✓ Already up to date (${afterHash})`);
-      return;
-    }
-
-    console.log('Installing dependencies…');
-    execFileSync('pnpm', ['install', '--frozen-lockfile'], {
-      cwd: appDir,
-      stdio: 'inherit',
-    });
-
-    console.log(`✓ Updated ${beforeHash} → ${afterHash}`);
-
-    if (opts.restart !== false) {
-      const pid = readPid();
-      if (pid !== null && isAlive(pid)) {
-        console.log('Restarting daemon…');
-        await daemonStop();
-        await daemonStart();
+      // Guard against silently destroying operator edits. The install
+      // dir is a real git repo, and `git reset --hard` below would
+      // wipe any uncommitted work — including hand-tuned system
+      // prompts or mid-debug tweaks. Refuse early unless the operator
+      // has opted in with --force.
+      const dirty = execFileSync('git', ['status', '--porcelain'], {
+        cwd: appDir,
+        encoding: 'utf8',
+      }).trim();
+      if (dirty.length > 0 && !opts.force) {
+        console.error('Refusing to update — install dir has uncommitted changes:');
+        console.error('');
+        console.error(dirty);
+        console.error('');
+        console.error(`Install dir: ${appDir}`);
+        console.error(
+          'Commit or stash them first, or pass --force to discard them.',
+        );
+        process.exit(1);
       }
-    }
-  });
+
+      // Fetch. Default mode pulls tags + main; --edge skips the tags
+      // dance because it's only ever resetting to origin/main.
+      // --prune-tags drops local tags that have been deleted upstream
+      // (rare, but keeps the local view honest if a tag ever gets
+      // re-cut).
+      console.log(
+        opts.edge
+          ? 'Fetching origin/main (--edge)…'
+          : 'Fetching latest release tags…',
+      );
+      const fetchArgs = opts.edge
+        ? ['fetch', '--depth', '1', 'origin', 'main']
+        : ['fetch', '--tags', '--prune-tags', 'origin', 'main'];
+      execFileSync('git', fetchArgs, { cwd: appDir, stdio: 'inherit' });
+
+      // Pick the target ref.
+      let targetRef: string;
+      let targetLabel: string;
+      if (opts.edge) {
+        targetRef = 'origin/main';
+        targetLabel = 'origin/main (edge)';
+      } else {
+        const tagsRaw = execFileSync(
+          'git',
+          ['tag', '-l', 'v*'],
+          { cwd: appDir, encoding: 'utf8' },
+        );
+        const latest = pickLatestReleaseTag(tagsRaw.split('\n'));
+        if (latest === null) {
+          console.error(
+            'No stable release tags found in this install.',
+          );
+          console.error(
+            'Pass --edge to update from origin/main, or wait for a tagged release.',
+          );
+          process.exit(1);
+        }
+        targetRef = latest;
+        targetLabel = latest;
+      }
+
+      // Compare current HEAD to the target. Idempotent: re-running
+      // when already on the latest release is a cheap no-op + clear
+      // message.
+      const beforeHash = execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
+        cwd: appDir,
+        encoding: 'utf8',
+      }).trim();
+      const targetHash = execFileSync(
+        'git',
+        ['rev-parse', '--short', targetRef],
+        { cwd: appDir, encoding: 'utf8' },
+      ).trim();
+
+      if (beforeHash === targetHash) {
+        console.log(`✓ Already on ${targetLabel} (${beforeHash})`);
+        return;
+      }
+
+      // Reset the worktree to the target. Hard reset is the
+      // destructive verb the dirty-check above is gating; safe by
+      // here.
+      console.log(`Updating ${beforeHash} → ${targetHash} (${targetLabel})…`);
+      execFileSync('git', ['reset', '--hard', targetRef], {
+        cwd: appDir,
+        stdio: 'inherit',
+      });
+
+      // Reinstall deps. --frozen-lockfile is the right call here:
+      // tagged releases ship a known-good lockfile, edge follows
+      // main where the lockfile is also expected to be consistent
+      // with package.json. Either case, we don't want auto-resolve
+      // surprises.
+      console.log('Installing dependencies…');
+      execFileSync('pnpm', ['install', '--frozen-lockfile'], {
+        cwd: appDir,
+        stdio: 'inherit',
+      });
+
+      console.log(`✓ Updated ${beforeHash} → ${targetHash} (${targetLabel})`);
+
+      if (opts.restart !== false) {
+        const pid = readPid();
+        if (pid !== null && isAlive(pid)) {
+          console.log('Restarting daemon…');
+          await daemonStop();
+          await daemonStart();
+        }
+      }
+    },
+  );
 
 program
   .command('doctor')

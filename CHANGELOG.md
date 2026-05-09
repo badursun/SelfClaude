@@ -4,6 +4,38 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html);
 breaking changes can land in `0.x` minor bumps until v1.0.
 
+## [0.2.0] — 2026-05-09
+
+`selfclaude update` now defaults to the latest **tagged release**
+instead of `origin/main` HEAD. This means new commits to main don't
+flow to operators until we cut a release — main is for development,
+tags are what users run. Release-driven update keeps everyone on a
+known-good version and stops "I pushed a regression at 2am, an
+operator ran update at 3am" from being possible.
+
+### Added
+- **`selfclaude update --edge`** — opt-in to the old behaviour
+  (track `origin/main`). Useful for contributors and CI.
+- **`SELFCLAUDE_EDGE=1` env var** for `install.sh` — same opt-in,
+  applied at install time so a fresh clone lands on edge instead
+  of the latest tag.
+- CLI test infrastructure (`pnpm --filter @selfclaude/cli test`)
+  and `pickLatestReleaseTag` unit tests covering numeric ordering,
+  pre-release rejection, and noisy-input tolerance.
+
+### Changed
+- **Default `selfclaude update` target is the latest stable tag**
+  (`vMAJOR.MINOR.PATCH`, no `-rc.1` / `-beta`). Existing v0.1.0
+  installs that picked up this code via main HEAD will, on their
+  next `update`, sync to v0.2.0 and from then on follow tags.
+- **`install.sh` checks out the latest tag** after clone/fetch
+  (when one exists) instead of leaving the worktree on main HEAD.
+
+### Notes
+- The first `selfclaude update` after this lands does the
+  transition from "main HEAD" to "latest stable tag" automatically.
+  No manual action required.
+
 ## [0.1.0] — 2026-05-09
 
 First release after v0.0.1 with meaningful surface changes — new
@@ -57,3 +89,4 @@ clean-up. Pre-1.0 so a minor bump covers the breakage.
   idle treatment.
 
 [0.1.0]: https://github.com/badursun/SelfClaude/releases/tag/v0.1.0
+[0.2.0]: https://github.com/badursun/SelfClaude/releases/tag/v0.2.0

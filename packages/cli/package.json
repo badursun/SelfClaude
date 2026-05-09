@@ -1,6 +1,6 @@
 {
   "name": "@selfclaude/cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "SelfClaude CLI entry — selfclaude binary",
   "private": true,
   "type": "module",
@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "tsx --tsconfig ../../tsconfig.base.json src/selfclaude.ts",
+    "test": "tsx --test tests/*.test.ts",
     "typecheck": "tsc -p . --noEmit"
   },
   "dependencies": {

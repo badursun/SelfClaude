@@ -1,6 +1,6 @@
 {
   "name": "@selfclaude/web",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "SelfClaude web UI (Next.js 14 + Tailwind, shadcn-flavored components)",
   "private": true,
   "type": "module",

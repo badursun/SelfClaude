@@ -117,19 +117,54 @@ ok "git $(git --version | awk '{print $3}')"
 hr
 
 # ─── Clone or update ────────────────────────────────────────────────
+# Default mode pins to the latest stable release tag (`vMAJOR.MINOR.PATCH`
+# only, no pre-releases). Set `SELFCLAUDE_EDGE=1` to track origin/$BRANCH
+# instead — the bleeding-edge channel for contributors / CI. The two paths
+# share the same fetch + reset machinery so an existing install on edge
+# can flip back to stable just by re-running without the env var.
 info "Installing SelfClaude into $INSTALL_DIR"
 mkdir -p "$(dirname "$INSTALL_DIR")"
 
 if [[ -d "$INSTALL_DIR/.git" ]]; then
-  ok "Existing install found — pulling latest from origin/$BRANCH"
-  git -C "$INSTALL_DIR" fetch --depth 1 origin "$BRANCH"
-  git -C "$INSTALL_DIR" reset --hard "origin/$BRANCH"
+  ok "Existing install found — fetching"
+  git -C "$INSTALL_DIR" fetch --tags --prune-tags origin "$BRANCH"
 elif [[ -e "$INSTALL_DIR" ]]; then
   fail "$INSTALL_DIR exists but isn't a git checkout. Move or remove it and re-run."
 else
   git clone --depth 1 --branch "$BRANCH" "$REPO_URL" "$INSTALL_DIR"
+  # The shallow clone above only fetches main; tags need a follow-up
+  # fetch so the latest-release pick below has anything to choose from.
+  git -C "$INSTALL_DIR" fetch --tags --prune-tags origin
   ok "Cloned to $INSTALL_DIR"
 fi
+
+# Pick the target ref: latest stable tag by default, origin/$BRANCH when
+# the operator opts into edge.
+TARGET=""
+TARGET_LABEL=""
+if [[ "${SELFCLAUDE_EDGE:-0}" == "1" ]]; then
+  TARGET="origin/$BRANCH"
+  TARGET_LABEL="$BRANCH (edge)"
+else
+  # Strict semver tags only — pre-release tags (vX.Y.Z-rc.1, vX.Y.Z-beta)
+  # never count as "latest stable". Sort numerically by stripping the leading
+  # `v` and feeding to sort -V; head -n1 picks the highest.
+  LATEST_TAG=$(git -C "$INSTALL_DIR" tag -l 'v*' \
+    | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+    | sort -V \
+    | tail -n1)
+  if [[ -n "$LATEST_TAG" ]]; then
+    TARGET="$LATEST_TAG"
+    TARGET_LABEL="$LATEST_TAG"
+  else
+    warn "No stable release tags found — falling back to origin/$BRANCH"
+    TARGET="origin/$BRANCH"
+    TARGET_LABEL="$BRANCH (no tags)"
+  fi
+fi
+
+git -C "$INSTALL_DIR" reset --hard "$TARGET"
+ok "Checked out $TARGET_LABEL"
 
 # ─── Install dependencies ───────────────────────────────────────────
 info "Installing dependencies (pnpm install)…"

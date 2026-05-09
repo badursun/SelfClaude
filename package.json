@@ -1,6 +1,6 @@
 {
   "name": "selfclaude-monorepo",
-  "version": "0.0.1",
+  "version": "0.2.0",
   "description": "Multi-agent orchestration on top of Claude Code. Supervisor delegates, specialists execute, you gate. Browser-based IDE; local-first.",
   "private": true,
   "type": "module",
@@ -33,7 +33,7 @@
   "scripts": {
     "dev": "pnpm --filter @selfclaude/cli dev",
     "build": "pnpm -r build",
-    "test": "pnpm --filter @selfclaude/core test",
+    "test": "pnpm -r --if-present test",
     "test:integration": "pnpm --filter @selfclaude/core test:integration",
     "typecheck": "pnpm -r typecheck",
     "lint": "biome check packages",
